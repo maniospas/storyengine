@@ -1,0 +1,312 @@
+import readchar
+import sys
+import time
+import threading
+
+try:
+    import msvcrt  # For Windows
+    def key_pressed():
+        return msvcrt.kbhit()
+except ImportError:
+    import select
+    import termios
+    import tty
+    def key_pressed():
+        dr, dw, de = select.select([sys.stdin], [], [], 0)
+        return dr != []
+    def init_unix_input():
+        fd = sys.stdin.fileno()
+        old = termios.tcgetattr(fd)
+        tty.setcbreak(fd)
+        return fd, old
+    def restore_unix_input(fd, old_settings):
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+def print_with_skip(text, delay):
+    skip = False
+    if 'msvcrt' in sys.modules:
+        def check_skip():
+            nonlocal skip
+            while not skip:
+                if key_pressed():
+                    skip = True
+        threading.Thread(target=check_skip, daemon=True).start()
+    else:
+        fd, old_settings = init_unix_input()
+        def check_skip():
+            nonlocal skip
+            while not skip:
+                if key_pressed():
+                    skip = True
+        threading.Thread(target=check_skip, daemon=True).start()
+    for i, c in enumerate(text):
+        if skip:
+            print(text[i:], end="")
+            break
+        print(c, end="")
+        sys.stdout.flush()
+        time.sleep(delay)
+    if 'termios' in sys.modules:
+        restore_unix_input(fd, old_settings)
+    print()
+    return skip
+
+
+vars = {
+    "[black]": "\033[030m",
+    "[red]": "\033[031m",
+    "[green]": "\033[032m",
+    "[yellow]": "\033[033m",
+    "[blue]": "\033[034m",
+    "[purple]": "\033[035m",
+    "[cyan]": "\033[036m",
+    "[white]": "\033[037m",
+    "[lightblack]": "\033[090m",
+    "[lightred]": "\033[091m",
+    "[lightgreen]": "\033[092m",
+    "[lightyellow]": "\033[093m",
+    "[lightblue]": "\033[094m",
+    "[lightpurple]": "\033[095m",
+    "[lightcyan]": "\033[096m",
+    "[lightwhite]": "\033[097m",
+    "[reset]": "\033[0m",
+    "[end]": "\n",
+    "[__refresh]": 36,
+}
+clear_screen = "\033[2J\033[H" # also moves the cursor to the top-left
+clear_last = "\033[1A\033[K" # clears last line
+
+def process_line(line):
+    while True:
+        if line.startswith("!"):
+            args = line[1:].strip().split(" ")
+            args = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args]
+            assert len(args)>2
+            if str(args[1]) == str(args[0]):
+                return
+            line = " ".join(args[2:])
+            continue
+        if line.startswith("@"):
+            args = line[1:].strip().split(" ")
+            args = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args]
+            assert len(args)>2
+            if str(args[1]) != str(args[0]):
+                return
+            line = " ".join(args[2:])
+            continue
+        if line.startswith(">"):
+            args = line[1:].strip().split(" ")
+            args = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args]
+            assert len(args)>2
+            if int(args[1]) <= int(args[0]):
+                return
+            line = " ".join(args[2:])
+            continue
+        if line.startswith("<"):
+            args = line[1:].strip().split(" ")
+            args = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args]
+            assert len(args)>2
+            if int(args[1]) >= int(args[0]):
+                return
+            line = " ".join(args[2:])
+            continue
+        if line.startswith("="):
+            line = line[1:].split()
+            assert len(line)==2
+            var = "["+line[1]+"]"
+            vars[var] = int(line[0])
+            return
+        if line.startswith("+"):
+            line = line[1:].split()
+            assert len(line)==2
+            var = "["+line[1]+"]"
+            vars[var] += int(line[0])
+            return
+        if line.startswith("-"):
+            line = line[1:].split()
+            assert len(line)==2
+            var = "["+line[1]+"]"
+            vars[var] -= int(line[0])
+            return
+        break
+        
+    if line.startswith("*"):
+        args = line[1:].strip().split(" ", 2)
+        args = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args]
+        assert isinstance(args[1], str)
+        line = args[1]*int(args[0])
+    for var, value in vars.items():
+        line = line.replace(var, str(value))
+    return line
+
+lines = list()
+printed = dict()
+ui = list()
+def draw(max_lines=40):
+    print(clear_screen)
+    ui_lines = 0
+    accum = ""
+    for line in ui:
+        line = process_line(line)
+        if line is None:
+            continue
+        if line.endswith("[noend]"):
+            accum += line
+            continue
+        print((accum+line).replace("[noend]", "")+vars["[reset]"])
+        ui_lines += 1
+        accum = ""
+    assert not accum
+    total_lines = 0
+    accum = ""
+    for line in lines:
+        if line is None:
+            continue
+        if line.endswith("[noend]"):
+            accum += line
+            continue
+        total_lines += 1
+        accum = ""
+    assert not accum
+    if total_lines+ui_lines<max_lines:
+        for _ in range(max_lines-total_lines-ui_lines):
+            print()
+    count_lines = 0
+    accum = ""
+    skipping = False
+    for line in lines:
+        if line is None:
+            continue
+        if line.endswith("[noend]"):
+            accum += line
+            continue
+        if count_lines >= total_lines-max_lines-ui_lines:
+            text = (accum+line).replace("[noend]", "")+vars["[reset]"]
+            printer = not text.startswith("|")
+            if not printer:
+                text = text[1:]
+            elif skipping:
+                printer = False
+            accum = ""
+            if not printed.get(count_lines, False):
+                printed[count_lines] = True
+                count_lines += 1
+                if printer:
+                    delay = float(vars["[__refresh]"]) / 1000.0
+                    skipping = print_with_skip(text, delay)
+                else:
+                    print(text)
+            else:
+                count_lines += 1
+                print(text)
+    assert not accum
+
+declaring_ui = False
+waiting_for = ""
+restarts = True
+while restarts:
+    declaring_ui = False
+    restarts = False
+    with open("book.st") as file:
+        for line in file:
+            if line[-1]=="\n":
+                line = line[:-1]
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("#"):
+                line = line[1:].strip()
+                if line==waiting_for:
+                    waiting_for = ""
+            elif waiting_for:
+                pass
+            elif line == "%":
+                declaring_ui = not declaring_ui
+            elif line.startswith("`"):
+                draw()
+                print(vars["[yellow]"]+"["+line[1:].strip()+"]"+vars["[reset]"])
+                while True:
+                    c = readchar.readkey()
+                    if c==readchar.key.SPACE or c==readchar.key.ENTER:
+                        break
+            elif line.startswith("<<<"):
+                waiting_for = line[3:].strip()
+                if not waiting_for:
+                    lines.clear()
+                    printed.clear()
+                    continue
+                assert waiting_for, "Use ` for banners"
+                options = waiting_for.split(",")
+                selection = 0
+                while True:
+                    opt = ""
+                    for i, option in enumerate(options):
+                        if i==selection:
+                            opt += vars["[yellow]"]
+                        opt += "["+option+"] "
+                        if i==selection:
+                            opt += vars["[reset]"]
+                    draw()
+                    print(opt, end="")
+                    sys.stdout.flush()
+                    c = readchar.readkey()
+                    if c==readchar.key.LEFT:
+                        selection -= 1
+                        if selection<0:
+                            selection = 0
+                    if c==readchar.key.RIGHT:
+                        selection += 1
+                        if selection>=len(options):
+                            selection = len(options)-1
+                    if c==readchar.key.SPACE or c==readchar.key.ENTER:
+                        break
+                waiting_for = options[selection]
+                assert not declaring_ui
+                if waiting_for:
+                    restarts = True
+                    lines.clear()
+                    printed.clear()
+                    ui.clear()
+                    break
+            elif line.startswith(">>>"):
+                waiting_for = line[3:].strip()
+                assert waiting_for, "Use ` for banners"
+                options = waiting_for.split(",")
+                selection = 0
+                while len(options)!=1:
+                    opt = ""
+                    for i, option in enumerate(options):
+                        if i==selection:
+                            opt += vars["[yellow]"]
+                        opt += "["+option+"] "
+                        if i==selection:
+                            opt += vars["[reset]"]
+                    draw()
+                    print(opt, end="")
+                    sys.stdout.flush()
+                    c = readchar.readkey()
+                    if c==readchar.key.LEFT:
+                        selection -= 1
+                        if selection<0:
+                            selection = 0
+                    if c==readchar.key.RIGHT:
+                        selection += 1
+                        if selection>=len(options):
+                            selection = len(options)-1
+                    if c=='F':
+                        vars["[__refresh]"] = vars["[__refresh]"]*2/3
+                    if c=='S':
+                        if vars["[__refresh]"]==0:
+                            vars["[__refresh]"] = 1
+                        elif vars["[__refresh]"]<50:
+                            vars["[__refresh]"] = vars["[__refresh]"]*3/2
+                    if c==readchar.key.SPACE or c==readchar.key.ENTER:
+                        break
+                waiting_for = options[selection]
+                assert not declaring_ui
+            else:
+                if declaring_ui:
+                    ui.append(line)
+                else:
+                    lines.append(process_line(line))
+draw()

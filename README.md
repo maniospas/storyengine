@@ -4,7 +4,7 @@ This is a domain-specific language for writting small text-based
 games. Its rules are fairly simple and it aims at letting the
 author create highly interactive stories. 
 
-**Use a markdown highlighter for .st files.**
+**Use an ini or markdown highlighter for .st files.**
 
 ## Text formatting
 
@@ -18,7 +18,7 @@ read in the console. Write the following file and save it
 as `book.st`. Then run `python engine.py` to get an 
 animated text in your screen. 
 
-```markdown
+```ini
 Hello world!
 ```
 
@@ -30,7 +30,7 @@ Formatting is reset at the end of each line or if you write
 As an example, below we print two green lines without animation.
 Formatting is reset for the last set of exclamations. 
 
-```markdown
+```ini
 |[green]Hello[end]world[reset]!!!
 ```
 

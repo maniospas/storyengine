@@ -48,7 +48,7 @@ This is an interactive short story where choices matter.
 |[cyan]                             CHAPTER I
 |[cyan]---------------------------------------------------------------------[end]
 
-Ugh! What happened? Where is this? Wait! More importantly; who am I? 
+Ugh! What happened? Where is this? Wait! More importantly, who am I? 
 If only this dust could settle... Maybe I could - hang on, what could 
 I do again? Seems I know nothing.
 |
@@ -81,7 +81,7 @@ of person. A mystery, perhaps for another time. Who cares?
 |[cyan]                            THE END
 |[cyan]----------------------------------------------------------------
 |
-Reread and do different things; you may be surprised!
+Reread and do different things. You may be surprised!
 
 <<< book cover,close the book
 

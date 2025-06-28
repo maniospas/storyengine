@@ -81,33 +81,33 @@ def process_line(line):
     while True:
         if line.startswith("!"):
             args = line[1:].strip().split(" ")
-            args = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args]
             assert len(args)>2
-            if str(args[1]) == str(args[0]):
+            argv = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args][:2]
+            if str(vars.get(argv[1],argv[1])) == str(vars.get(argv[0],argv[0])):
                 return
             line = " ".join(args[2:])
             continue
         if line.startswith("@"):
             args = line[1:].strip().split(" ")
-            args = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args]
             assert len(args)>2
-            if str(args[1]) != str(args[0]):
+            argv = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args][:2]
+            if str(vars.get(argv[1],argv[1])) != str(vars.get(argv[0],argv[0])):
                 return
             line = " ".join(args[2:])
             continue
         if line.startswith(">"):
             args = line[1:].strip().split(" ")
-            args = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args]
             assert len(args)>2
-            if int(args[1]) <= int(args[0]):
+            argv = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args][:2]
+            if int(vars.get(argv[1],argv[1])) <= int(vars.get(argv[0],argv[0])):
                 return
             line = " ".join(args[2:])
             continue
         if line.startswith("<"):
             args = line[1:].strip().split(" ")
-            args = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args]
             assert len(args)>2
-            if int(args[1]) >= int(args[0]):
+            argv = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args][:2]
+            if int(vars.get(argv[1],argv[1])) >= int(vars.get(argv[0],argv[0])):
                 return
             line = " ".join(args[2:])
             continue
@@ -116,10 +116,11 @@ def process_line(line):
             assert len(line)==2
             var = "["+line[1]+"]"
             value = vars.get("["+line[0]+"]", line[0])
+            value = vars.get(line[0], line[0])
             try:
                 value = int(value)
             except:
-                assert value[0]=="\"" and value[-1]=="\"" and len(value)>=2
+                assert value[0]=="\"" and value[-1]=="\"" and len(value)>=2, value
                 value = value[1:-1]
             vars[var] = value
             return
@@ -127,7 +128,7 @@ def process_line(line):
             line = line[1:].split()
             assert len(line)==2
             var = "["+line[1]+"]"
-            value = vars.get("["+line[0]+"]", line[0])
+            value = vars.get(line[0], line[0])
             try:
                 value = int(value)
                 if value < 0:
@@ -142,29 +143,29 @@ def process_line(line):
             line = line[1:].split()
             assert len(line)==2
             var = "["+line[1]+"]"
-            vars[var] += (vars.get("["+line[0]+"]", line[0]))
+            vars[var] += int(vars.get(line[0], line[0]))
             return
         if line.startswith("-"):
             line = line[1:].split()
             assert len(line)==2
             var = "["+line[1]+"]"
-            vars[var] -= (vars.get("["+line[0]+"]", line[0]))
+            vars[var] -= int(vars.get(line[0], line[0]))
             return
         if line.startswith("*"):
             line = line[1:].split()
             assert len(line)==2
             var = "["+line[1]+"]"
-            vars[var] *= (vars.get("["+line[0]+"]", line[0]))
+            vars[var] *= int(vars.get(line[0], line[0]))
             return
         if line.startswith("/"):
             line = line[1:].split()
             assert len(line)==2
             var = "["+line[1]+"]"
-            vars[var] /= (vars.get("["+line[0]+"]", line[0]))
+            vars[var] /= int(vars.get(line[0], line[0]))
             return
         break
         
-    if line.startswith("*"):
+    if line.startswith("^"):
         args = line[1:].strip().split(" ", 2)
         args = [vars.get("["+arg.strip()+"]", arg.strip()) for arg in args]
         assert isinstance(args[1], str)
@@ -176,7 +177,8 @@ def process_line(line):
 lines = list()
 printed = dict()
 ui = list()
-def draw(max_lines=40):
+def draw(max_lines=20,fewer_lines=0, skipping = False):
+    max_lines -= fewer_lines
     print(clear_screen)
     ui_lines = 0
     accum = ""
@@ -192,31 +194,25 @@ def draw(max_lines=40):
         accum = ""
     assert not accum
     total_lines = 0
-    accum = ""
     for line in lines:
         if line is None:
             continue
         if line.endswith("[noend]"):
-            accum += line
             continue
         total_lines += 1
-        accum = ""
-    assert not accum
-    if total_lines+ui_lines<max_lines:
-        for _ in range(max_lines-total_lines-ui_lines):
-            print()
+    for _ in range(max_lines-total_lines-ui_lines):
+        print()
     count_lines = 0
     accum = ""
-    skipping = False
     for line in lines:
         if line is None:
             continue
         if line.endswith("[noend]"):
             accum += line
             continue
-        if count_lines >= total_lines-max_lines-ui_lines:
+        if count_lines >= total_lines-max_lines+ui_lines:
             text = (accum+line).replace("[noend]", "")+vars["[reset]"]
-            printer = not text.startswith("|")
+            printer = not text.startswith("|") or text=="|"
             if not printer:
                 text = text[1:]
             elif skipping:
@@ -233,7 +229,10 @@ def draw(max_lines=40):
             else:
                 count_lines += 1
                 print(text)
-    assert not accum
+        else:
+            count_lines += 1
+    #assert not accum
+    return skipping
 
 declaring_ui = False
 waiting_for = ""
@@ -241,6 +240,7 @@ restarts = True
 while restarts:
     declaring_ui = False
     restarts = False
+    skipping = False
     with open("book.st") as file:
         for line in file:
             if line[-1]=="\n":
@@ -252,23 +252,25 @@ while restarts:
                 line = line[1:].strip()
                 if line==waiting_for:
                     waiting_for = ""
+                    skipping = False
             elif waiting_for:
                 pass
             elif line == "%":
                 declaring_ui = not declaring_ui
             elif line.startswith("`"):
                 line = line[1:].strip()
-                waiting_for = parse_line(waiting_for)
-                assert waiting_for is not None
-                draw()
-                print(vars["[yellow]"]+"["+line+"]"+vars["[reset]"])
+                line = process_line(line)
+                assert line is not None
+                draw(fewer_lines=1)
+                print(vars["[yellow]"]+"["+line+"]"+vars["[reset]"], end="")
+                sys.stdout.flush()
                 while True:
                     c = readchar.readkey()
                     if c==readchar.key.SPACE or c==readchar.key.ENTER:
                         break
             elif line.startswith("<<<"):
                 waiting_for = line[3:].strip()
-                waiting_for = parse_line(waiting_for)
+                waiting_for = process_line(waiting_for)
                 if not waiting_for:
                     lines.clear()
                     printed.clear()
@@ -276,7 +278,7 @@ while restarts:
                 assert waiting_for
                 options = waiting_for.split(",")
                 selection = 0
-                while True:
+                while len(options)!=1:
                     opt = ""
                     for i, option in enumerate(options):
                         if i==selection:
@@ -284,7 +286,7 @@ while restarts:
                         opt += "["+option+"] "
                         if i==selection:
                             opt += vars["[reset]"]
-                    draw()
+                    draw(fewer_lines=1)
                     print(opt, end="")
                     sys.stdout.flush()
                     c = readchar.readkey()
@@ -308,7 +310,7 @@ while restarts:
                     break
             elif line.startswith(">>>"):
                 waiting_for = line[3:].strip()
-                waiting_for = parse_line(waiting_for)
+                waiting_for = process_line(waiting_for)
                 assert waiting_for
                 options = waiting_for.split(",")
                 selection = 0
@@ -320,7 +322,7 @@ while restarts:
                         opt += "["+option+"] "
                         if i==selection:
                             opt += vars["[reset]"]
-                    draw()
+                    draw(fewer_lines=1)
                     print(opt, end="")
                     sys.stdout.flush()
                     c = readchar.readkey()
@@ -347,5 +349,9 @@ while restarts:
                 if declaring_ui:
                     ui.append(line)
                 else:
-                    lines.append(process_line(line))
+                    line = process_line(line)
+                    if line is not None:
+                        for line in line.split("\n"):
+                            lines.append(line)
+                            skipping = draw(skipping=skipping)
 draw()

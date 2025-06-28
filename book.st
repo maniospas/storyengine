@@ -97,7 +97,7 @@ I do again? Seems I know nothing.
   >>> coconut
 
   # look
-  Anyway, looking arround I can see the dust parting somewhat.  Enough 
+  Anyway, looking arround I can see the dust parting somewhat. Enough 
   to make out a coconut zooming towards me! I barely avoid it by rolling 
   away. Standing up shaken but having gained a small victory, I 
   mechanically touch the bridge of my nose in triumph. 
@@ -137,9 +137,9 @@ a second coconut at me.
   >>> hit
 
   # block
-  I take the safe option of raising my arms to block the projectile. It
-  smarts, but I withstand the attack. Maybe it will bruise a bit, though 
-  nothing serious.
+  I take the safe option of raising my arms to block the projectile.
+  It smarts, but I withstand the attack. Maybe it will bruise a bit, 
+  though nothing serious.
   |
   `[red]-1 health [cyan]+1 strength[yellow]
   -1 health
@@ -147,7 +147,7 @@ a second coconut at me.
   >>> flee
 
   # wait
-  I laugh, finding the situation hilariousl. I will not dodge! 
+  I laugh, finding the situation hilarious. I will not dodge! 
   I will stand there and take the hit - to make a statement! Of what
   I know not.
   |
@@ -177,7 +177,7 @@ who I am.
 
 
 # flee
-Perhaps because I have become the target for coconut-throwing, I am 
+Perhaps because I have become a target for coconut-throwing, I am 
 still thoroughly confused. So I should be forgiven in noticing late 
 that the perpetrator is now running away. 
 |
@@ -239,15 +239,16 @@ Is it... screeching mockingly? Does it perchance have sentience?
   cracked. I am able to pry it open and it is as delicious as it was 
   painful to get hit by! I feel my vitality returning from the land
   of the hungry, and resolve to always carry around delicious stuff. 
+  Worries about a monkey -that is no longer around- have abated.
   |
   `[cyan]+2 health[yellow]
   +2 health
   >[max_health] health = [max_health] health
 
-  I take the other coconut with me as provisions - a rock can help pry 
+  I take the other coconut with me as provisions - a rock can pry 
   it open much better than my head. Also, is my head so sturdy so as 
   to break this hard shell open? Unable to answer the question, yet 
-  satiated I look around.
+  satiated, I look around.
   |
   `[cyan]+1 provisions[yellow]
   +1 provisions
@@ -260,24 +261,25 @@ Is it... screeching mockingly? Does it perchance have sentience?
 
 # places
   By now, the dust that had maybe coincided with my arrival has fully 
-  settled down.[noend]
-  >10 intellect There is no wind blowing, after all.[noend]
-  This place is surely interesting.
+  settled down. There is no wind blowing, after all. 
   |
-  In the distance, a tall mountain can be seen. But nearby a dirt trail
-  winds away. Lastly, in the direction the monkey fled, there is a dense
-  jungle. I am in a kind of junction between the three.
-  >10 sight Of the three, the trail looks most promising, as it has wagon-tracks.
-  >10 sight Surely it leeds to some city. I squint and sure enough spot chimney smoke in the distance.
-  <11 sight [end]I weigh my options but don't have much to go for. 
+  In the distance, a tall mountain can be seen. But nearby a dirt
+  trail winds away. Lastly, in the direction the monkey fled, there
+  is a dense jungle. I am in a kind of junction between the three.
+  ?20 _chance_
+  >[_chance_] sight [end]Of the three, the trail looks most promising, as it has wagon-tracks.
+  >[_chance_] sight Surely it leeds to some city. I squint, and sure enough spot chimney
+  >[_chance_] sight smoke in the distance. Having such keen sight feels good, and I 
+  >[_chance_] sight push my glases u-. Sorry, there's no such item on me. I just touch 
+  >[_chance_] sight top of my nose. A habit it seems.
+  <[_chance_] sight [end]I weigh my options but don't have much to go for. 
   |
   = "trail" _trail_
-  >10 sight = "city" _trail_
+  >[_chance_] sight = "city" _trail_
   >>> jungle,mountain,[_trail_]
 
 
 # jungle
-
 The jungle is hot and sticky, and generally a pain to move
 through. The tall overarching trees create flickering shadows
 that mess with one's sense of direction.
@@ -285,36 +287,116 @@ that mess with one's sense of direction.
 With all hopes of finding my way forward or backward lost
 under the canopy of leaves. Spiderwebs occasionally cling to 
 me, but thankfully none of the large spiders weaving them take 
-a fancy on hoping on my back.
+a fancy of my flesh.
 
-
->>> book end
+>>> death
 
 
 # mountain
-
-The road towards the mountain is long. Minutes stretch into
-hours -I still have no idea how I get to name all things
-other than myself- and I grow weary. Above me, the sun burns
-hot and I feel my motivation draining.
+The road towards the mountain is long. Minutes stretch into hours.
+Yes, the terms are familiar, no there is no recollection of the 
+learning process. In a more serious note, I grow weary. 
 |
-`[red]-2 health[yellow]
--2 health
+= "hot" _next_
+?20 _chance_
+<10 _chance_ = "rainy" _next_
+>>> [_next_]
 
->>> book end
+  # hot
+  Above me, the sun burns scalding hot and I feel my motivation 
+  draining. It took longer than advised to notice my dehydration.
+  |
+  `[red]-2 health[yellow]
+  -2 health
+  >>> shelter
+
+  # rainy
+  Something pokes the top of my head. Then again, and again.
+  Hey, I know whis feeling! I look up at the dark clouds hiding
+  the sun for verification. Indeed, this is rain.
+  |
+  >>> shelter
+
+  # shelter
+  > 0 provisions It is prudent to find shelter, but then I will need to dig
+  > 0 provisions into my scant provisions while waiting for long. Maybe it's
+  > 0 provisions ok, because they are delicious.[end]
+  @ 0 provisions It is prudent to find shelter, but then I have no provisions
+  @ 0 provisions and I fear I will perish if stuck at at this desolate land 
+  @ 0 provisions for long.[end]
+  I am not too far, so perhaps I can also weather the weather in the
+  jungle? On the other hand, the mountain is a nice vantage point.
+  |
+  = "" _shelter_
+  > 0 provisions = "shelter," _shelter_
+  >>> [_shelter_]go on,jungle
+
+  # go on
+  I reach the mountain by nightfall. It seems any amount of speed
+  is useless if your endurance is low. So it's strength one should
+  rely on to cover long distances. Burning muscles are not good 
+  for the health. Especially under extreme weather.
+  |
+  ?20 _chance_
+  =2 _damage_
+  > [_chance_] strength = 0 _damage_
+  `-[_damage_] damage
+  -[_damage_] damage
+  >>> vantage
+
+  # vantage
+  Anyway, the view is breathtaking. I see the endlessly expanding
+  jungle - wise to not wander in its depths. I see 
+  |
+  >>> death
+
+  # shelter
+  I tough out the weather under the shade of a large rock. A very
+  large rock. No, you did not get me, a VERY LARGE rock. Which is why 
+  it was easy to spot from very far away. If we were in the sea, 
+  I would expect a lighthouse on top of that tower-like shape.
+  |
+  ? 20 _chance_
+  > [_chance_] intellect What is this huge specimen of mansonry doing here? I am
+  > [_chance_] intellect saying "mansonry" because this is the only conceivable explanation
+  > [_chance_] intellect of why the rock is composed of several smoother segments.[end]
+  @"curious" trait My curiocity is piqued. I think it is supposed to kill cats or something,
+  @"curious" trait so not applicable to me - whatever I am.
+  |
+  `[red]-1 provisions[yellow]
+  -1 provisions
+  ="" _investigate_
+  @"curious" trait ="dungeon" 
+  >>> death
 
 # trail
->>> book end
+>>> death
 
 # city
+Having a clear sense of direction means that I do not get
+confused by the trailing winding away from it. I walk and
+walk just before soft rain starts falling.
+|
+It rings playfully at the cobblestone. Pitter-patter.
+|
+>>> death
+
+
+# death
+= "END" progress
+Death stands over me, silently, waiting for my last spark
+of thought before fading to obscurity. The last bit of 
+entropy going away makes my being whole. 
+|
+Now I know. I smile.
+|
+Oh, silent specter, so sure on your finality, can a character 
+perish while there is a story waiting to be told?
+|
 >>> book end
 
 
 # book end
-<<<
-= "END" progress
-|
-Reread and do different things. You may be surprised!
 |
 <<< book cover,close the book
 

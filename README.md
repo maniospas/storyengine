@@ -6,6 +6,15 @@ author create highly interactive stories.
 
 **Use an toml or markdown (better in vscode, in github use mdx) highlighter for .st files.**
 
+## Planned features
+
+[x] Reader engine.
+[ ] User text input.
+[ ] Spaces in quoted strings.
+[ ] Escape for menu with save load and configuration.
+[ ] Curtom file processing.
+[ ] Static error checking (if it starts, it runs).
+
 ## Text formatting
 
 The syntax mainly depends on separating instructions into lines.

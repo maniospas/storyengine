@@ -1,12 +1,11 @@
-import readchar
 import sys
 import time
 import threading
 import random
-
 import sys
 import time
 import threading
+import os
 
 if sys.platform == 'win32':
     import msvcrt
@@ -14,7 +13,6 @@ else:
     import select
     import tty
     import termios
-
 def key_pressed():
     if sys.platform == 'win32': return msvcrt.kbhit()
     if not sys.stdin.isatty(): return False
@@ -23,11 +21,9 @@ def key_pressed():
         return bool(dr)
     except Exception: return False
     return False
-
 def get_key():
     if sys.platform == 'win32': return msvcrt.getch().decode('utf-8', errors='ignore')
     return sys.stdin.read(1)
-
 class TerminalInput:
     def __enter__(self):
         self.enabled = sys.stdin.isatty() and sys.platform != 'win32'
@@ -39,7 +35,6 @@ class TerminalInput:
         except Exception: self.enabled = False
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.enabled: termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
-
 def print_with_skip(text, delay):
     skip = False
     def check_skip():
@@ -58,6 +53,59 @@ def print_with_skip(text, delay):
     print()
     return skip
 
+KEY_LEFT  = 'LEFT'
+KEY_RIGHT = 'RIGHT'
+KEY_ENTER = 'ENTER'
+KEY_SPACE = ' '
+KEY_UNKNOWN = 'UNKNOWN'
+
+if sys.platform == 'win32':
+    def readchar():
+        ch = msvcrt.getch()
+        if ch == b'\r': return KEY_ENTER
+        if ch == b' ': return KEY_SPACE
+        if ch in (b'\x00', b'\xe0'):
+            ch2 = msvcrt.getch()
+            if ch2 == b'K': return KEY_LEFT
+            if ch2 == b'M': return KEY_RIGHT
+            return KEY_UNKNOWN
+        return ch.decode('utf-8', errors='ignore')
+
+else:
+    def readchar():
+        if not sys.stdin.isatty():
+            return KEY_UNKNOWN
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setcbreak(fd)
+            ch1 = sys.stdin.read(1)
+            if ch1 == '\x1b':
+                ch2 = sys.stdin.read(1)
+                if ch2 == '[':
+                    ch3 = sys.stdin.read(1)
+                    sequence = f'\x1b[{ch3}'
+                    if sequence == '\x1b[D': return KEY_LEFT
+                    if sequence == '\x1b[C': return KEY_RIGHT
+                    return KEY_UNKNOWN
+                return KEY_UNKNOWN
+            if ch1 in ('\r', '\n'): return KEY_ENTER
+            if ch1 == ' ': return KEY_SPACE
+            return ch1
+        finally: termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+def enable_ansi_support():
+    if os.name != 'nt':
+        return
+    import ctypes
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE = -11
+    mode = ctypes.c_ulong()
+    if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+        return  # Cannot get mode, likely not a real console
+    mode.value |= 0x0004  # ENABLE_VIRTUAL_TERMINAL_PROCESSING
+    kernel32.SetConsoleMode(handle, mode)
+enable_ansi_support()
 
 vars = {
     "[black]": "\033[030m",
@@ -268,11 +316,10 @@ while restarts:
                 line = process_line(line)
                 assert line is not None
                 draw(fewer_lines=1)
-                print(vars["[yellow]"]+"["+line+"]"+vars["[reset]"], end="")
-                sys.stdout.flush()
+                print(vars["[yellow]"]+"["+line+"]"+vars["[reset]"], end="", flush=True)
                 while True:
-                    c = readchar.readkey()
-                    if c==readchar.key.SPACE or c==readchar.key.ENTER:
+                    c = readchar()
+                    if c==KEY_SPACE or c==KEY_ENTER:
                         break
             elif line.startswith("<<<"):
                 waiting_for = line[3:].strip()
@@ -283,7 +330,7 @@ while restarts:
                     continue
                 assert waiting_for
                 options = waiting_for.split(",")
-                selection = 0
+                selection = random.randint(0,len(options)-1)
                 while len(options)!=1:
                     opt = ""
                     for i, option in enumerate(options):
@@ -293,18 +340,17 @@ while restarts:
                         if i==selection:
                             opt += vars["[reset]"]
                     draw(fewer_lines=1)
-                    print(opt, end="")
-                    sys.stdout.flush()
-                    c = readchar.readkey()
-                    if c==readchar.key.LEFT:
+                    print(opt, end="", flush=True)
+                    c = readchar()
+                    if c==KEY_LEFT:
                         selection -= 1
                         if selection<0:
                             selection = 0
-                    if c==readchar.key.RIGHT:
+                    if c==KEY_RIGHT:
                         selection += 1
                         if selection>=len(options):
                             selection = len(options)-1
-                    if c==readchar.key.SPACE or c==readchar.key.ENTER:
+                    if c==KEY_SPACE or c==KEY_ENTER:
                         break
                 waiting_for = options[selection]
                 assert not declaring_ui
@@ -319,7 +365,7 @@ while restarts:
                 waiting_for = process_line(waiting_for)
                 assert waiting_for
                 options = waiting_for.split(",")
-                selection = 0
+                selection = random.randint(0,len(options)-1)
                 while len(options)!=1:
                     opt = ""
                     for i, option in enumerate(options):
@@ -329,14 +375,13 @@ while restarts:
                         if i==selection:
                             opt += vars["[reset]"]
                     draw(fewer_lines=1)
-                    print(opt, end="")
-                    sys.stdout.flush()
-                    c = readchar.readkey()
-                    if c==readchar.key.LEFT:
+                    print(opt, end="", flush=True)
+                    c = readchar()
+                    if c==KEY_LEFT:
                         selection -= 1
                         if selection<0:
                             selection = 0
-                    if c==readchar.key.RIGHT:
+                    if c==KEY_RIGHT:
                         selection += 1
                         if selection>=len(options):
                             selection = len(options)-1
@@ -347,7 +392,7 @@ while restarts:
                             vars["[__refresh]"] = 1
                         elif vars["[__refresh]"]<50:
                             vars["[__refresh]"] = vars["[__refresh]"]*3/2
-                    if c==readchar.key.SPACE or c==readchar.key.ENTER:
+                    if c==KEY_SPACE or c==KEY_ENTER:
                         break
                 waiting_for = options[selection]
                 assert not declaring_ui

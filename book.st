@@ -5,19 +5,25 @@
 =10 sight
 =10 speed
 =10 social
+=0 provisions
 ="none" trait
 = "WONDERS" progress
+= 20 __refresh
 
 %
   =[max_health] _lost_
   -[health] _lost_
-  !0 _lost_ [white]
-  !0 _lost_ ▌[red][noend]
-  !0 _lost_ > 3 health [yellow][noend]
-  !0 _lost_ > 7 health [green][noend]
-  !0 _lost_ ^ health ❤[noend]
   !0 _lost_ [white][noend]
-  !0 _lost_ ^ _lost_ ❤
+  !0 _lost_ ▌[red][noend]
+  !0 _lost_ > 3 health < 8 health ^ health 🧡[noend]
+  !0 _lost_ > 7 health ^ health 💚[noend]
+  !0 _lost_ < 4 health ^ health ❤️[noend]
+  !0 _lost_ [white][noend]
+  !0 _lost_ ^ _lost_ 🤍
+%
+%
+  !0 provisions ▌[noend]
+  !0 provisions ^ provisions 🥥
 %
 % 
   !10 strength ▌✊ [strength] strength
@@ -40,6 +46,7 @@
 =10 sight
 =10 speed
 =10 social
+=0 provisions
 ="none" trait
 = "WONDERS" progress
 
@@ -140,7 +147,7 @@ a second coconut at me.
   >>> flee
 
   # wait
-  I laugh, finding the situation hilariously funny. I will not dodge! 
+  I laugh, finding the situation hilariousl. I will not dodge! 
   I will stand there and take the hit - to make a statement! Of what
   I know not.
   |
@@ -179,14 +186,14 @@ Is it... screeching mockingly? Does it perchance have sentience?
 >>> chase,think,look,eat
 
   # chase
-  Enraged I follow the monkey into a jungle. It has the home advantage, but 
-  I embrace my anger, feeling myself going [cyan]berserk[res]. How dare the simian play 
-  with me that way?
+  Enraged I follow the monkey into a jungle. It has the home advantage, 
+  but I embrace my anger, feeling myself going [cyan]berserk[reset]. How dare 
+  the simian play with me that way?
   |
   I soon learn that both my anger and hopes of releasing it by smacking 
-  the creature at least once are misplaced. For I both lost both it 
-  and my way in the dense forestation. It seems there is a use for 
-  anger, but that is not for hunters.
+  the creature at least once are misplaced. For I both lost both my
+  quary and my way in the dense forestation. If there is use for anger, 
+  that is not for hunters.
   |
   = "berserk" trait
   >>> jungle
@@ -229,15 +236,23 @@ Is it... screeching mockingly? Does it perchance have sentience?
 
   # eat
   Before further action, I stoop to grab the coconuts, one of which is 
-  cracked and that I am able to pry open. It is as delicious as it was 
-  painful to get hit by! I take the other with me as provisions. As I feel 
-  my vitality returning from the land of the hungry, I resolve to always 
-  carry around stuff as delicious as that. Satiated, I look around.
+  cracked. I am able to pry it open and it is as delicious as it was 
+  painful to get hit by! I feel my vitality returning from the land
+  of the hungry, and resolve to always carry around delicious stuff. 
   |
   `[cyan]+2 health[yellow]
   +2 health
   >[max_health] health = [max_health] health
+
+  I take the other coconut with me as provisions - a rock can help pry 
+  it open much better than my head. Also, is my head so sturdy so as 
+  to break this hard shell open? Unable to answer the question, yet 
+  satiated I look around.
+  |
+  `[cyan]+1 provisions[yellow]
+  +1 provisions
   >>> look
+
 
   # look
   >>> places
@@ -250,11 +265,11 @@ Is it... screeching mockingly? Does it perchance have sentience?
   This place is surely interesting.
   |
   In the distance, a tall mountain can be seen. But nearby a dirt trail
-  winds away. Lastly, in the direction the monkey fled there is a dense
+  winds away. Lastly, in the direction the monkey fled, there is a dense
   jungle. I am in a kind of junction between the three.
   >10 sight Of the three, the trail looks most promising, as it has wagon-tracks.
   >10 sight Surely it leeds to some city. I squint and sure enough spot chimney smoke in the distance.
-  <11 sight I weigh my options but don't have much to go for.
+  <11 sight [end]I weigh my options but don't have much to go for. 
   |
   = "trail" _trail_
   >10 sight = "city" _trail_
@@ -263,9 +278,36 @@ Is it... screeching mockingly? Does it perchance have sentience?
 
 # jungle
 
+The jungle is hot and sticky, and generally a pain to move
+through. The tall overarching trees create flickering shadows
+that mess with one's sense of direction.
+|
+With all hopes of finding my way forward or backward lost
+under the canopy of leaves. Spiderwebs occasionally cling to 
+me, but thankfully none of the large spiders weaving them take 
+a fancy on hoping on my back.
+
+
+>>> book end
+
+
 # mountain
 
+The road towards the mountain is long. Minutes stretch into
+hours -I still have no idea how I get to name all things
+other than myself- and I grow weary. Above me, the sun burns
+hot and I feel my motivation draining.
+|
+`[red]-2 health[yellow]
+-2 health
+
+>>> book end
+
+# trail
+>>> book end
+
 # city
+>>> book end
 
 
 # book end
@@ -273,7 +315,7 @@ Is it... screeching mockingly? Does it perchance have sentience?
 = "END" progress
 |
 Reread and do different things. You may be surprised!
-
+|
 <<< book cover,close the book
 
 

@@ -4,7 +4,7 @@ This is a domain-specific language for writting small text-based
 games. Its rules are fairly simple and it aims at letting the
 author create highly interactive stories. 
 
-**Use an ini, toml, or markdown (better for vscode) highlighter for .st files.**
+**Use an properties, toml, or markdown (better for vscode) highlighter for .st files.**
 
 ## Text formatting
 
@@ -44,6 +44,13 @@ one will continue from its end.
 
 ## Hud
 
+You can also crate a an interface at the top of your screen.
+You can add to this interface as the story progresses by
+enclosing a set of lines into `%%`. These two symbols
+should be placed in a line separately to mark the beginning
+and end of the information. This text is also re-evaluated
+every time it is drawn.
+
 ```toml
 =10 max_health
 =10 health
@@ -54,17 +61,17 @@ one will continue from its end.
 =10 social
 
 %
-  !health 10 ▌[red][noend]
-  !health 10 > 3 health [yellow][noend]
-  !health 10 > 7 health [green][noend]
-  !health 10 * health ❤
+  ▌[red][noend]
+  > 3 health [yellow][noend]
+  > 7 health [green][noend]
+  * health ❤
   [end]
 %
 % 
-  !10 strength  ▌✊ Strength   [strength]
-  !10 intellect ▌🧠 Intellect  [intellect]
-  !10 sight     ▌👀 Sight      [sight]
-  !10 speed     ▌🐾 Speed      [speed]
-  !10 social    ▌🎭 Social     [social]
+  ▌✊ Strength   [strength]
+  ▌🧠 Intellect  [intellect]
+  ▌👀 Sight      [sight]
+  ▌🐾 Speed      [speed]
+  ▌🎭 Social     [social]
 %
 ```

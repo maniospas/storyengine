@@ -270,7 +270,7 @@ Is it... screeching mockingly? Does it perchance have sentience?
 
 # book end
 <<<
-progress = "END"
+= "END" progress
 |
 Reread and do different things. You may be surprised!
 
@@ -279,7 +279,7 @@ Reread and do different things. You may be surprised!
 
 # close the book
 <<<
-progress = "GOODBYE"
+= "GOODBYE" progress
 
 I hope that you had fun. :-)
 Best wishes in these troubled times. 

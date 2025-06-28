@@ -4,53 +4,58 @@ import time
 import threading
 import random
 
-try:
-    import msvcrt  # For Windows
+import sys
+import time
+import threading
+
+# --- Platform Detection and Setup ---
+if sys.platform == 'win32':
+    import msvcrt
     def key_pressed():
         return msvcrt.kbhit()
-except ImportError:
-    import select
+    def get_key():
+        return msvcrt.getch().decode('utf-8', errors='ignore')
+    class TerminalInput:
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
+else:
     import termios
     import tty
+    import select
     def key_pressed():
-        dr, dw, de = select.select([sys.stdin], [], [], 0)
-        return dr != []
-    def init_unix_input():
-        fd = sys.stdin.fileno()
-        old = termios.tcgetattr(fd)
-        tty.setcbreak(fd)
-        return fd, old
-    def restore_unix_input(fd, old_settings):
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        dr, _, _ = select.select([sys.stdin], [], [], 0)
+        return bool(dr)
+    def get_key():
+        return sys.stdin.read(1)
+    class TerminalInput:
+        def __enter__(self):
+            self.fd = sys.stdin.fileno()
+            self.old_settings = termios.tcgetattr(self.fd)
+            tty.setcbreak(self.fd)
+            return self
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
 
 def print_with_skip(text, delay):
     skip = False
-    if 'msvcrt' in sys.modules:
-        def check_skip():
-            nonlocal skip
-            while not skip:
-                if key_pressed():
-                    skip = True
+    def check_skip():
+        nonlocal skip
+        while not skip:
+            if key_pressed():
+                skip = True
+    with TerminalInput():
         threading.Thread(target=check_skip, daemon=True).start()
-    else:
-        fd, old_settings = init_unix_input()
-        def check_skip():
-            nonlocal skip
-            while not skip:
-                if key_pressed():
-                    skip = True
-        threading.Thread(target=check_skip, daemon=True).start()
-    for i, c in enumerate(text):
-        if skip:
-            print(text[i:], end="")
-            break
-        print(c, end="")
-        sys.stdout.flush()
-        time.sleep(delay)
-    if 'termios' in sys.modules:
-        restore_unix_input(fd, old_settings)
+        for i, c in enumerate(text):
+            if skip:
+                print(text[i:], end="", flush=True)
+                break
+            print(c, end="", flush=True)
+            time.sleep(delay)
     print()
     return skip
+
 
 
 vars = {

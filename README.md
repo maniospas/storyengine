@@ -51,7 +51,7 @@ should be placed in a line separately to mark the beginning
 and end of the information. This text is also re-evaluated
 every time it is drawn.
 
-```properties
+```org
 =10 max_health
 =10 health
 =10 strength

@@ -2,6 +2,7 @@ import readchar
 import sys
 import time
 import threading
+import random
 
 try:
     import msvcrt  # For Windows
@@ -114,19 +115,52 @@ def process_line(line):
             line = line[1:].split()
             assert len(line)==2
             var = "["+line[1]+"]"
-            vars[var] = int(line[0])
+            value = vars.get("["+line[0]+"]", line[0])
+            try:
+                value = int(value)
+            except:
+                assert value[0]=="\"" and value[-1]=="\"" and len(value)>=2
+                value = value[1:-1]
+            vars[var] = value
+            return
+        if line.startswith("?"):
+            line = line[1:].split()
+            assert len(line)==2
+            var = "["+line[1]+"]"
+            value = vars.get("["+line[0]+"]", line[0])
+            try:
+                value = int(value)
+                if value < 0:
+                    value = -random.randint(0, -value)
+                else:
+                    value = random.randint(0, value)
+            except:
+                raise Exception("Only numbers can get random values")
+            vars[var] = value
             return
         if line.startswith("+"):
             line = line[1:].split()
             assert len(line)==2
             var = "["+line[1]+"]"
-            vars[var] += int(line[0])
+            vars[var] += (vars.get("["+line[0]+"]", line[0]))
             return
         if line.startswith("-"):
             line = line[1:].split()
             assert len(line)==2
             var = "["+line[1]+"]"
-            vars[var] -= int(line[0])
+            vars[var] -= (vars.get("["+line[0]+"]", line[0]))
+            return
+        if line.startswith("*"):
+            line = line[1:].split()
+            assert len(line)==2
+            var = "["+line[1]+"]"
+            vars[var] *= (vars.get("["+line[0]+"]", line[0]))
+            return
+        if line.startswith("/"):
+            line = line[1:].split()
+            assert len(line)==2
+            var = "["+line[1]+"]"
+            vars[var] /= (vars.get("["+line[0]+"]", line[0]))
             return
         break
         
@@ -223,19 +257,23 @@ while restarts:
             elif line == "%":
                 declaring_ui = not declaring_ui
             elif line.startswith("`"):
+                line = line[1:].strip()
+                waiting_for = parse_line(waiting_for)
+                assert waiting_for is not None
                 draw()
-                print(vars["[yellow]"]+"["+line[1:].strip()+"]"+vars["[reset]"])
+                print(vars["[yellow]"]+"["+line+"]"+vars["[reset]"])
                 while True:
                     c = readchar.readkey()
                     if c==readchar.key.SPACE or c==readchar.key.ENTER:
                         break
             elif line.startswith("<<<"):
                 waiting_for = line[3:].strip()
+                waiting_for = parse_line(waiting_for)
                 if not waiting_for:
                     lines.clear()
                     printed.clear()
                     continue
-                assert waiting_for, "Use ` for banners"
+                assert waiting_for
                 options = waiting_for.split(",")
                 selection = 0
                 while True:
@@ -270,7 +308,8 @@ while restarts:
                     break
             elif line.startswith(">>>"):
                 waiting_for = line[3:].strip()
-                assert waiting_for, "Use ` for banners"
+                waiting_for = parse_line(waiting_for)
+                assert waiting_for
                 options = waiting_for.split(",")
                 selection = 0
                 while len(options)!=1:

@@ -75,8 +75,7 @@ That's all.
 
 If you only have only one option, you move to that automatically.
 Furthermore, If you want to wait for your user about something 
-and wait for them to progress, start a line with `\``. In general,
-options are never 
+and wait for them to progress, start a line with `\``.
 
 ```mdx
 Hi!

@@ -18,7 +18,7 @@ read in the console. Write the following file and save it
 as `book.st`. Then run `python engine.py` to get an 
 animated text in your screen. 
 
-```ini
+```properties
 Hello world!
 ```
 
@@ -30,7 +30,7 @@ Formatting is reset at the end of each line or if you write
 As an example, below we print two green lines without animation.
 Formatting is reset for the last set of exclamations. 
 
-```toml
+```properties
 
 |[green]Hello[end]world[reset]!!!
 ```
@@ -51,7 +51,7 @@ should be placed in a line separately to mark the beginning
 and end of the information. This text is also re-evaluated
 every time it is drawn.
 
-```toml
+```properties
 =10 max_health
 =10 health
 =10 strength
@@ -74,4 +74,8 @@ every time it is drawn.
   ▌🐾 Speed      [speed]
   ▌🎭 Social     [social]
 %
+
+# test
+
+This is my text
 ```

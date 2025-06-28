@@ -4,7 +4,7 @@ This is a domain-specific language for writting small text-based
 games. Its rules are fairly simple and it aims at letting the
 author create highly interactive stories. 
 
-**Use an toml or markdown highlighter for .st files.**
+**Use an ini, toml, or markdown (better for vscode) highlighter for .st files.**
 
 ## Text formatting
 
@@ -18,7 +18,7 @@ read in the console. Write the following file and save it
 as `book.st`. Then run `python engine.py` to get an 
 animated text in your screen. 
 
-```toml
+```ini
 Hello world!
 ```
 
@@ -31,6 +31,7 @@ As an example, below we print two green lines without animation.
 Formatting is reset for the last set of exclamations. 
 
 ```toml
+
 |[green]Hello[end]world[reset]!!!
 ```
 
@@ -43,4 +44,27 @@ one will continue from its end.
 
 ## Hud
 
-In some cases, you might want to e
+```toml
+=10 max_health
+=10 health
+=10 strength
+=10 intellect
+=10 sight
+=10 speed
+=10 social
+
+%
+  !health 10 ▌[red][noend]
+  !health 10 > 3 health [yellow][noend]
+  !health 10 > 7 health [green][noend]
+  !health 10 * health ❤
+  [end]
+%
+% 
+  !10 strength  ▌✊ Strength   [strength]
+  !10 intellect ▌🧠 Intellect  [intellect]
+  !10 sight     ▌👀 Sight      [sight]
+  !10 speed     ▌🐾 Speed      [speed]
+  !10 social    ▌🎭 Social     [social]
+%
+```

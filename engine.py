@@ -8,35 +8,37 @@ import sys
 import time
 import threading
 
-# --- Platform Detection and Setup ---
 if sys.platform == 'win32':
     import msvcrt
-    def key_pressed():
-        return msvcrt.kbhit()
-    def get_key():
-        return msvcrt.getch().decode('utf-8', errors='ignore')
-    class TerminalInput:
-        def __enter__(self):
-            return self
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            pass
 else:
-    import termios
-    import tty
     import select
-    def key_pressed():
+    import tty
+    import termios
+
+def key_pressed():
+    if sys.platform == 'win32': return msvcrt.kbhit()
+    if not sys.stdin.isatty(): return False
+    try:
         dr, _, _ = select.select([sys.stdin], [], [], 0)
         return bool(dr)
-    def get_key():
-        return sys.stdin.read(1)
-    class TerminalInput:
-        def __enter__(self):
+    except Exception: return False
+    return False
+
+def get_key():
+    if sys.platform == 'win32': return msvcrt.getch().decode('utf-8', errors='ignore')
+    return sys.stdin.read(1)
+
+class TerminalInput:
+    def __enter__(self):
+        self.enabled = sys.stdin.isatty() and sys.platform != 'win32'
+        if not self.enabled: return self
+        try:
             self.fd = sys.stdin.fileno()
             self.old_settings = termios.tcgetattr(self.fd)
             tty.setcbreak(self.fd)
-            return self
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
+        except Exception: self.enabled = False
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.enabled: termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
 
 def print_with_skip(text, delay):
     skip = False
@@ -55,7 +57,6 @@ def print_with_skip(text, delay):
             time.sleep(delay)
     print()
     return skip
-
 
 
 vars = {

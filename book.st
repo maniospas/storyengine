@@ -1,3 +1,5 @@
+# book cover
+
 =10 max_health
 =10 health
 =10 strength
@@ -10,7 +12,7 @@
 = "WONDERS" progress
 = 20 __refresh
 
-%
+% HEALTH
   =[max_health] _lost_
   -[health] _lost_
   !0 _lost_ [white][noend]
@@ -21,24 +23,23 @@
   !0 _lost_ [white][noend]
   !0 _lost_ ^ _lost_ 🤍
 %
-%
+% PROVISIONS
   !0 provisions ▌[noend]
   !0 provisions ^ provisions 🥥
 %
-% 
+% ABILITIES
   !10 strength ▌✊ [strength] strength
   !10 intellect ▌🧠 [intellect] intellect
   !10 sight ▌👀 [sight] sight
   !10 speed ▌🐾 [speed] speed
   !10 social ▌🎭 [social] social
+%
+% HEADER
 [end][cyan]---------------------------------------------------------------------
 [cyan]  [progress]
 [cyan]---------------------------------------------------------------------[end]
 %
 
-
-
-# book cover
 =10 max_health
 =10 health
 =10 strength
@@ -57,7 +58,7 @@ This is an interactive short story where choices matter.
 [reset]- Left/right arrows change selection. 
 [reset]- Press space or enter to select.
 |
->>> start reading,close the book
+<<< start reading,close the book,book cover
 
 # start reading
 <<<
@@ -196,7 +197,7 @@ Is it... screeching mockingly? Does it perchance have sentience?
   that is not for hunters.
   |
   = "berserk" trait
-  >>> jungle
+  >>> jungle depths
 
   # think
   ="think" _next_
@@ -278,8 +279,22 @@ Is it... screeching mockingly? Does it perchance have sentience?
   >[_chance_] sight = "city" _trail_
   >>> jungle,mountain,[_trail_]
 
-
 # jungle
+The jungle seems like a wild place. But there is a draw to it; the
+smell of adventure! Surely I want to go there. Or do I? Meh, I will
+not change my mind.
+|
+Most conveniently, it is close by - I am practically standing at its
+fringes. So let us consider this the workings of fate, shall we?
+|
+Soon I realize there is no fate, no loving higher power at work that 
+positioned me close to the accursed place. For I am not enjoying 
+myself. At all.
+| 
+>>> jungle depths
+
+# jungle depth
+="JUNGLE" progress
 The jungle is hot and sticky, and generally a pain to move
 through. The tall overarching trees create flickering shadows
 that mess with one's sense of direction.
@@ -288,11 +303,16 @@ With all hopes of finding my way forward or backward lost
 under the canopy of leaves. Spiderwebs occasionally cling to 
 me, but thankfully none of the large spiders weaving them take 
 a fancy of my flesh.
-
+|
 >>> death
 
 
 # mountain
+="MOUNTAIN" progress
+After self-deliberation, I figure getting to a high vantage point
+might help me gain a sense for the lay of the land. So on to the
+mountains!
+|
 The road towards the mountain is long. Minutes stretch into hours.
 Yes, the terms are familiar, no there is no recollection of the 
 learning process. In a more serious note, I grow weary. 
@@ -340,8 +360,8 @@ learning process. In a more serious note, I grow weary.
   ?20 _chance_
   =2 _damage_
   > [_chance_] strength = 0 _damage_
-  `-[_damage_] damage
-  -[_damage_] damage
+  `-[_damage_] health
+  -[_damage_] health
   >>> vantage
 
   # vantage
@@ -370,9 +390,11 @@ learning process. In a more serious note, I grow weary.
   >>> death
 
 # trail
->>> death
+="TRAIL" progress
+>>> city
 
 # city
+="CITY" progress
 Having a clear sense of direction means that I do not get
 confused by the trailing winding away from it. I walk and
 walk just before soft rain starts falling.

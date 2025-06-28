@@ -237,6 +237,8 @@ def draw(max_lines=20,fewer_lines=0, skipping = False):
     ui_lines = 0
     accum = ""
     for line in ui:
+        if line is None:   # invalidated lines by overwriting components
+            continue
         line = process_line(line)
         if line is None:
             continue
@@ -291,6 +293,7 @@ def draw(max_lines=20,fewer_lines=0, skipping = False):
 declaring_ui = False
 waiting_for = ""
 restarts = True
+ui_components = dict()
 while restarts:
     declaring_ui = False
     restarts = False
@@ -309,7 +312,19 @@ while restarts:
                     skipping = False
             elif waiting_for:
                 pass
-            elif line == "%":
+            elif line.startswith("%"):
+                if declaring_ui:
+                    ui_component = ui_components[ui_component_name].append(len(ui)) # get current name
+                    ui_components 
+                ui_component_name = process_line(line[1:].strip())
+                assert ui_component_name is not None
+                if declaring_ui:
+                    assert not ui_component_name
+                else:
+                    if ui_component_name in ui_components:
+                        for i in range(*ui_components[ui_component_name]):
+                            ui[i] = None
+                    ui_components[ui_component_name] = [len(ui)]
                 declaring_ui = not declaring_ui
             elif line.startswith("`"):
                 line = line[1:].strip()
@@ -358,7 +373,6 @@ while restarts:
                     restarts = True
                     lines.clear()
                     printed.clear()
-                    ui.clear()
                     break
             elif line.startswith(">>>"):
                 waiting_for = line[3:].strip()

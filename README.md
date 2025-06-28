@@ -67,8 +67,7 @@ Here is an example:
 
 ```mdx
 Had fun?
->>> of course
->>> perhaps
+>>> of course,perhaps
 
 # of course
 Of course we did!
@@ -220,13 +219,18 @@ Do check your stories.**
 
 ## Hud
 
-You can also crate an interface at the top of your screen.
-You can add to this interface as the story progresses by
-enclosing a set of lines into `%%`. Each of those two symbols
+You can also crate an interface at the top of your screen by
+enclosing a set of lines between two `%`. Each of those 
 should be placed in a line separately from other text
-to mark the beginning
-and end of the information. This text is also re-evaluated
-every time it is drawn. For example, the code below
+to mark the beginning and end of the information. 
+This text is also re-evaluated
+every time it is drawn. 
+
+You can modify this interface as the story progresses too.
+Add a Hud element name after the first `%` to overwrite
+only any previous elements of the same name. This also 
+means that you get to construct Huds by combining multiple 
+segments, like below.
 
 ```mdx
 =10 max_health
@@ -237,14 +241,14 @@ every time it is drawn. For example, the code below
 =10 speed
 =10 social
 
-%
+% HEALTH
   ▌[red][noend]
   > 3 health [yellow][noend]
   > 7 health [green][noend]
   * health ❤
   [end]
 %
-% 
+% ABILITIES
   ▌✊ Strength   [strength]
   ▌🧠 Intellect  [intellect]
   ▌👀 Sight      [sight]
@@ -253,6 +257,5 @@ every time it is drawn. For example, the code below
 %
 
 # start
-
 This is my adventure.
 ```

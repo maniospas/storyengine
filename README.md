@@ -12,8 +12,9 @@ author create highly interactive stories.
 [ ] User text input.
 [ ] Spaces in quoted strings.
 [ ] Escape for menu with save load and configuration.
-[ ] Curtom file processing.
-[ ] Static error checking (if it starts, it runs).
+[x] Curtom file processing.
+[x] Extended fuzz testing.
+[ ] Story graph.
 
 ## Text formatting
 
@@ -24,8 +25,12 @@ or containing value manipulation.
 
 In the simplest case, you would write stylized text to be
 read in the console. Save the following file
-as `book.st`. Then run `python engine.py` to get an 
-animated text in your screen. 
+as *book.st*. Then run `python -m engine book.st` to get an 
+animated text in your screen. *book.st* is the default story,
+so you can skip that particular name and also write `python -m engine`.
+Note that you need no additional Python dependencies; the
+engine works out-of-the-box, though it's recommended to run
+it directly in your system terminal and in in IDEs like IDLE. 
 
 ```mdx
 Hello world!
@@ -114,6 +119,23 @@ I win.
 You are wrong. 
 <<< start
 ```
+
+## Testing your stories
+
+Before going on, I should also mention
+the you can have automated testing that randomly wades
+through options of your story. This will catch most
+conceivable errors, such as unused story segments, pointing
+to missing, and so on. These errors would otherwise
+appear as encountered while running stories. Testing also 
+generates for you a visual storyboard to get a visual diagram
+of what you have created. Do note that it
+may randomly miss some stuff, but this becomes progressively
+unlikely as more and more testing repetitions are added.
+
+Run testing with `python -m engine book.st --test 1000`, 
+where the last number is the number of times the story is
+silently repeated.
 
 ## Variables
 

@@ -63,10 +63,7 @@
   @0 provisions |
   @0 provisions `[red]-1 health[yellow]
   @0 provisions -1 health
-  ="" _death_
-  <0 health ="death" _death_
-  >>> [_death_]
-
+  <1 health >>> death
   >0 provisions I eye my provisions carefully and pick the most tasty. Yum![end]
   >0 provisions -1 provisions
 &
@@ -130,12 +127,8 @@ a second coconut at me.
 >>> dodge,block,wait
 
   # dodge
-  ? 20 _chance_
-  = "fail" _next_
-  < [speed] _chance_ = "dodge" _next_
-  >>> [_next_]
-
-  # dodge
+  ?20 random
+  <[random] speed >>> fail
   It is trivial to dodge the telegraphed attack. I am getting good at 
   this! Maybe I should start dodging for a living. What did I do for a 
   living again? At best vague colors move in my memory.
@@ -173,18 +166,15 @@ hits me squarely in the face with the elegance of a brick. I also
 take the emoitional damage of remembering what bricks are but not 
 who I am.
 \\ DAMAGE 2
-= "flee" _next_
-< 7 health = "tough" _next_
->>> [_next_]
+>6 health >>> flee
 
-  # tough
-  At least I feel like my tolerance for pain has increased from all 
-  the beating I took. Or maybe I only now discovered that I can take 
-  a beating and keep standing perfectly fine.
-  |
-  `[cyan]+2 max health[yellow]
-  +2 max_health
-  >>> flee
+At least I feel like my tolerance for pain has increased from all 
+the beating I took. Or maybe I only now discovered that I can take 
+a beating and keep standing perfectly fine.
+|
+`[cyan]+2 max health[yellow]
++2 max_health
+>>> flee
 
 
 # flee
@@ -210,16 +200,12 @@ Is it... screeching mockingly? Does it perchance have sentience?
   >>> jungle depths
 
   # think
-  ="think" _next_
-  >12 intellect ="superthink" _next_
-  >>> [_next_]
+  <13 intellect >>> think
 
-  # superthink
   I take the chance to think things through, discovering that I can work my 
   brain more and more. I am just learning about myself afterall!
-  |
-  `[cyan]+1 intellect[yellow]
-  +1 intellect
+  \\ GAIN +1 intellect
+
   But I have reached the state of knowing a lot about my superfloous qualities. 
   I do not think I will be surprising myself in other areas, though of course 
   this can always be fixed with good-old -I shudder imagining it- training or 
@@ -260,7 +246,6 @@ Is it... screeching mockingly? Does it perchance have sentience?
   \\ GAIN +1 provisions
   >>> look
 
-
   # look
   >>> places
 
@@ -297,20 +282,6 @@ positioned me close to the accursed place. For I am not enjoying
 myself. At all.
 | 
 >>> jungle depths
-
-# jungle depths
-="JUNGLE" progress
-The jungle is hot and sticky, and generally a pain to move
-through. The tall overarching trees create flickering shadows
-that mess with one's sense of direction.
-|
-With all hopes of finding my way forward or backward lost
-under the canopy of leaves. Spiderwebs occasionally cling to 
-me, but thankfully none of the large spiders weaving them take 
-a fancy of my flesh.
-|
->>> death
-
 
 # mountain
 ="MOUNTAIN" progress
@@ -355,6 +326,19 @@ learning process. In a more serious note, I grow weary.
   |
   >>> shelter,go on,jungle
 
+  # jungle 
+  With tired steps, I trace my way to the jungle as the hazardous nature 
+  does its best to hammer home ... that this is not my home. Tired, I mistep 
+  in the unsteady terrain and sprain my ankle horribly just a little bit
+  before the first trees.
+  \\ DAMAGE 3
+  I curse the sky or abstractly whichever gods exist in the lands. For I 
+  have forgotten mine. so I move in deeper and deeper. However, even if the 
+  thick canopy overhead forms an safe shelter from heat,cold,or rain, 
+  I feel like I have traded one kind of peril for another.
+  |
+  >>> jungle depths
+
   # go on
   I reach the mountain by nightfall. It seems any amount of speed
   is useless if your endurance is low. So it's strength one should
@@ -390,9 +374,21 @@ learning process. In a more serious note, I grow weary.
   @"curious" trait My curiocity is piqued. I think it is supposed to kill cats or something,
   @"curious" trait so not applicable to me - whatever I am.
   |
-  ="" _investigate_
-  @"curious" trait ="dungeon" 
+  @"curious" trait >>> death
   >>> death
+
+# jungle depths
+="JUNGLE" progress
+The jungle is hot and sticky, and generally a pain to move
+through. The tall overarching trees create flickering shadows
+that mess with one's sense of direction.
+|
+With all hopes of finding my way forward or backward lost
+under the canopy of leaves. Spiderwebs occasionally cling to 
+me, but thankfully none of the large spiders weaving them take 
+a fancy of my flesh.
+|
+>>> death
 
 # trail
 ="TRAIL" progress

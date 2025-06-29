@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Story Engine Editor</title>
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2em;
+      background: #f8f9fa;
+    }
+
+    .editor-wrapper {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: white;
+      height: 400px;
+      overflow: auto;
+      max-width: 800px;
+    }
+
+    pre[contenteditable] {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      outline: none;
+      height: 100%;
+      caret-color: black;
+    }
+
+    button.choice { margin: 0.5em 0.5em 0 0; padding: 0.5em 1em; }
+
+    #output {
+      margin-top: 2em;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 1em;
+      border-radius: 6px;
+      max-width: 760px;
+      min-height: 100px;
+    }
+
+    #hud {
+      margin-top: 2em;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 1em;
+      border-radius: 6px;
+      max-width: 760px;
+    }
+
+
+
+  #run-btn {
+    background: linear-gradient(to right, #2c3e50, #34495e);
+    color: #ecf0f1;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75em 1.5em;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s, transform 0.2s ease;
+  }
+
+  #run-btn:hover {
+    background: linear-gradient(to right, #34495e, #2c3e50);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  #run-btn:active {
+    transform: scale(0.98);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  }
+
+    .token.hash      { color: blue; }
+    .token.arrow     { color: green; }
+    .token.backslash { color: saddlebrown; }
+    .token.square    { color: purple; }
+    .token.varname   { color: rgb(94, 89, 89); }
+    .token.amp       { color: saddlebrown; }
+    .token.percent   { color: saddlebrown; }
+    .token.operator  { color: blue; }
+  </style>
+</head>
+<body>
+
+<h2>Story Engine Editor</h2>
+
+<div class="editor-wrapper">
+  <pre id="editor" class="language-story" contenteditable="true" spellcheck="false">
+# start
+[green]You awake in a misty field.[reset]
+>>> walk away, stay
+
+# walk away
+You leave everything behind.
+>>> end
+
+# stay
+You remain and face your fears.
+-10 patience
+You now have [patience]% patience.
+>>> end
+
+# end
+[blue]Thank you for playing![reset]
+  </pre>
+</div>
+
+<button id="run-btn">Run Story</button>
+<br>
+<br>
+<div id="hud" hidden="true"></div>
+<div id="output"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="story-lang.js"></script>
+<script src="runner.js"></script>
+
+<script>
+  // Highlight on load
+  document.addEventListener("DOMContentLoaded", () => {
+    Prism.highlightElement(document.getElementById("editor"));
+  });
+
+  // Cursor-preserving highlight logic
+  function preserveCursorAndHighlight(element) {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(element);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+    const caretOffset = preCaretRange.toString().length;
+
+    Prism.highlightElement(element);
+
+    // Restore caret
+    function setCaret(el, offset) {
+      const nodeStack = [el];
+      let charCount = 0, node;
+
+      while ((node = nodeStack.pop())) {
+        if (node.nodeType === 3) {
+          const nextCharCount = charCount + node.length;
+          if (offset <= nextCharCount) {
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.setStart(node, offset - charCount);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            return;
+          }
+          charCount = nextCharCount;
+        } else {
+          let i = node.childNodes.length;
+          while (i--) nodeStack.push(node.childNodes[i]);
+        }
+      }
+    }
+
+    setCaret(element, caretOffset);
+  }
+
+  // Apply it on input
+  const editor = document.getElementById("editor");
+  editor.addEventListener("input", () => {
+    preserveCursorAndHighlight(editor);
+  });
+
+</script>
+
+</body>
+</html>

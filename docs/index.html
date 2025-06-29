@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Story Engine</title>
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism.css" rel="stylesheet" />
+  <style>
+    .token.hash      { color: blue; }
+    .token.arrow     { color: green; }
+    .token.backslash { color: saddlebrown; }
+    .token.square    { color: purple; }
+    .token.varname   { color: rgb(94, 89, 89); }
+    .token.amp       { color: saddlebrown; }
+    .token.percent   { color: saddlebrown; }
+    .token.operator  { color: blue; }
+    .language-story {font-size: 1em!important;line-height: 1!important;}
+    button.choice { margin: 0.5em 0.5em 0 0; padding: 0.5em 1em; }
+  </style>
+</head>
+<body>
+
+<nav style="
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #2c3e50;
+  color: #ecf0f1;
+  padding: 0.75em 1em;
+  border-bottom: 2px solid #34495e;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  gap: 2em;
+">
+  <strong style="color: #ecdbff;">Story Engine</strong>
+  <a href="#introduction" style="color: #ecf0f1; text-decoration: none;">Introduction</a>
+  <a href="#formatting" style="color: #ecf0f1; text-decoration: none;">Formatting</a>
+  <a href="#goto" style="color: #ecf0f1; text-decoration: none;">Goto</a>
+  <a href="#variables" style="color: #ecf0f1; text-decoration: none;">Variables</a>
+  <a href="#hud-and-macros" style="color: #ecf0f1; text-decoration: none;">HUD &amp; Macros</a>
+</nav>
+
+<!-- Content Wrapper -->
+<div style="max-width: 1024px; margin: 0 auto; padding: 6em 1em 2em 1em;">
+
+
+
+
+<h2 id="introduction">Introduction</h2>
+
+<p>
+  <strong>Story Engine</strong> is a simple language for writing interactive, text-based games. Each line in a script acts as a command:
+  plain text is shown to the player, and symbols at the start of lines control behavior. Segments start with <code class="token hash">#</code>, 
+  choices with <code class="token arrow">&gt;&gt;&gt;</code>, pauses with <code class="token backslash">`</code>, variables are created with <code class="token operator">=</code>, 
+  and reusable blocks (macros) are defined with <code class="token amp">&amp;</code> and called with <code class="token backslash">\\</code>. 
+  Text formatting uses square brackets <code class="token square">[green]</code>, and animated lines can be disabled with <code class="token operator">|</code>.
+  Here's a minimal example showing a named segment, a variable, styled output, and a branching choice:
+</p>
+
+<pre><code class="language-story">
+= 100 patience
+& ENCOURAGE
+  You can do it!
+&
+
+# start
+|[green]Welcome[end] back![reset]
+You have [patience]% patience left.
+>>> keep going,give up
+
+# keep going
+Good choice.
+\\ ENCOURAGE
+>>> end
+
+# give up
+That's okay too.
+>>> end
+
+# end
+Thanks for playing!
+</code></pre>
+
+
+<h2 id="formatting">Formatting</h2>
+
+<p>
+  Story lines are animated by default. To disable animation for a line or to create an empty line, prefix it with <code class="token operator">|</code>. 
+  To display a waiting message that is not stored prefix the line with <code class="token operator">`</code>.
+  Use square brackets <code class="token square">[color]</code> to style text with colors or control formatting. Common formatting tags are shown below.
+  Use empty lines marked with <code class="token operator">|</code> for spacing, and include <code class="token square">[reset]</code> or a color at the start of a line 
+  if you want to write symbols like <code class="token hash">#</code> or <code class="token arrow">&gt;&gt;&gt;</code> without triggering their behavior.
+</p>
+<ul>
+  <li><code class="token square">[green]</code>, <code>[red]</code>, etc. – text color</li>
+  <li><code class="token square">[reset]</code> – reset formatting</li>
+  <li><code class="token square">[end]</code> – manual line break</li>
+  <li><code class="token square">[noend]</code> – continue next line on the same console line</li>
+</ul>
+
+<h2 id="goto">Goto</h2>
+
+<p>
+  Story segments begin with <code class="token hash">#</code> and can be linked using <code class="token arrow">&gt;&gt;&gt;</code> followed by one or more comma-separated option labels. 
+  Players navigate these options using arrow keys and confirm with space or enter.
+  If only one option is listed, the story will automatically proceed. The next option will be visited each time; previous ones are considered fullfilled.
+  To jump to a previous option while also removing text, use <code class="token arrow">&lt;&lt;&lt;</code> instead. This scans the file from the beginning
+  and starts from the first entry with the given name. Here is an example that keeps looping:</p>
+
+<pre><code class="language-story">
+# start
+Ready to begin?
+>>> yes, no
+
+# yes
+Great! Let's go.
+<<< start
+
+# no
+Maybe next time.
+</code></pre>
+
+
+
+<h2 id="variables">Variables</h2>
+
+<p>
+  Variables store numbers or text and are used to track game state. Assign values with <code class="token operator">=</code>, modify them using 
+  <code class="token operator">+</code>, <code>-</code>, <code>*</code>, or <code>/</code>, and replace them in text using square brackets.
+  The replacement can also be done in place of numbers or strings.
+  To set a variable to a random number (from 0 to a maximum), use <code>?</code>. Variable names use <code>_</code> or <code>.</code> to separate words.
+  You can conditionally run lines based on comparisons shown below. 
+  Comparisons can be stacked for "and" logic. For conditional choices or segments, use a temporary variable with <code class="token varname">_underscores_</code>.</p>
+<ul>
+  <li><code class="token operator">@</code> — equal</li>
+  <li><code class="token operator">!</code> — not equal</li>
+  <li><code class="token operator">&lt;</code>, <code>&gt;</code> — less/greater (numbers only)</li>
+</ul>
+
+<pre><code class="language-story">
+?100 patience
+
+# intro
+?50 annoyed
+You have [patience]% patience left.
+You got [annoyed]% annoyed.
+-[annoyed] patience
+&lt;10 patience  ="expl" _option_
+>10 patience  ="safe" _option_
+>>> [_option_]
+
+# expl
+You exploded.
+
+# safe
+You're stable.
+</code></pre>
+
+
+<h2 id="hud-and-macros">HUD &amp; Macros</h2>
+
+<p>
+  Use <code class="token percent">%</code> blocks to create a persistent interface at the top of the screen. These are re-rendered as the story progresses.
+  Each HUD block starts and ends with a line containing just <code>%</code>. To organize the interface, give each HUD block a name like <code>% STATS</code> — 
+  this allows overwriting HUD sections with the same name, and combines multiple sections with different names.
+  You can insert dynamic values (like variables) and use conditional drawing with standard logic syntax (e.g., <code>&gt; 7 health</code>).
+  Here is an example:
+</p>
+
+<pre><code class="language-story">
+= 10 health
+= 10 strength
+
+% HEALTH
+  ▌> 7 health [green][noend]
+  * health ❤
+  [end]
+%
+
+% STATS
+  Strength: [strength]
+%
+
+# start
+Let’s begin your journey.
+</code></pre>
+
+<p>
+  Macros define reusable text or logic blocks. Use <code class="token amp">&amp;</code> to declare a macro and <code class="token backslash">\\</code> to call it.
+  Macros expand inline where they're invoked and can help reduce repetition in your scripts. They can also contain any macro too as long as the latter has
+  been defined before the invokation point (this system is Turing complete).
+  You can also pass parameters to macros by naming them after the macro’s name. When calling the macro, provide values separated by commas.
+  Here is an example:
+</p>
+
+<pre><code class="language-story">
+& GREET name
+  Hello, [name]!
+&
+
+# start
+\\ GREET Hero
+\\ GREET Friend
+</code></pre>
+
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-core.min.js"></script>
+<script>
+  Prism.languages.story = {
+    'hash': {
+      pattern: /^#.*/m,
+      greedy: true,
+      inside: {
+        'hash': /^#/
+      }
+    },
+    'arrow': {
+      pattern: /^>>>|<<</m,
+      alias: 'arrow'
+    },
+    'backslash': {
+      pattern: /\\{1,2}/,
+      alias: 'backslash'
+    },
+    'square': {
+      pattern: /\[[^\]]*\]/,
+      alias: 'square'
+    },
+    'string': {
+      pattern: /(["'])(?:\\.|(?!\1)[^\\\r\n])*\1/,
+      greedy: true,
+      alias: 'square'  // color strings like square
+    },
+    'number': {
+      pattern: /\b\d+(?:\.\d+)?\b/,
+      alias: 'square'  // color numbers like square
+    },
+    'varname': {
+      pattern: /_[a-zA-Z0-9_.]+_/,
+      alias: 'varname'
+    },
+    'amp': {
+      pattern: /^&/m,
+      alias: 'amp'
+    },
+    'percent': {
+      pattern: /^%/m,
+      alias: 'percent'
+    },
+    'operator': {
+      pattern: /^[+\-*/=<>!?`]/m,
+      alias: 'operator'
+    }
+  };
+</script>
+
+<script>
+  Prism.highlightAll();
+</script>
+
+</body>
+</html>

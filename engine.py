@@ -9,6 +9,150 @@ import os
 
 
 """
+VISUALIZATION
+"""
+import json
+
+def export_graph_to_html(graph, filename="graph.html"):
+    nodes = list(graph.keys())
+
+    d3_nodes = [{"id": name} for name in nodes]
+    d3_links = []
+
+    for src, edges in graph.items():
+        for tgt, weight in edges.items():
+            d3_links.append({
+                "source": src,
+                "target": tgt,
+                "value": weight
+            })
+
+    # Set canvas size and default zoom scale
+    width = 1600
+    height = 900
+    initial_scale = 0.75
+    initial_translate = (
+        width * (1 - initial_scale) / 2,
+        height * (1 - initial_scale) / 2
+    )
+
+    html_template = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Graph Visualization</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {{ font-family: sans-serif; margin: 20px;}}
+    #instructions {{font-size: 18px;margin-bottom: 10px;}}
+    .link {{stroke: #999;stroke-opacity: 0.6;}}
+    .node circle {{stroke: #fff; stroke-width: 1.5px;}}
+    text {{font: 24px sans-serif;pointer-events: none;}}
+  </style>
+</head>
+<body>
+<div id="instructions">
+  🔍 Scroll to zoom, drag background to pan, drag nodes to move them.
+</div>
+<svg width="{width}" height="{height}"></svg>
+<script>
+  const nodes = {json.dumps(d3_nodes)};
+  const links = {json.dumps(d3_links)};
+  const svg = d3.select("svg");
+  const width = +svg.attr("width");
+  const height = +svg.attr("height");
+  const container = svg.append("g");
+  const zoom = d3.zoom()
+    .scaleExtent([0.1, 8])
+    .on("zoom", (event) => {{
+      container.attr("transform", event.transform);
+    }});
+  svg.call(zoom);
+  svg.call(zoom.transform,d3.zoomIdentity.translate({initial_translate[0]}, {initial_translate[1]}).scale({initial_scale}));
+  const simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+    .force("charge", d3.forceManyBody().strength(-400))
+    .force("center", d3.forceCenter(width / 2, height / 2));
+  svg.append("defs").append("marker")
+    .attr("id", "arrow")
+    .attr("viewBox", "0 -3 6 6")
+    .attr("refX", 16)  // Smaller offset to position the arrow closer to the node
+    .attr("refY", 0)
+    .attr("markerWidth", 4)  // Smaller marker size
+    .attr("markerHeight", 4)
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M0,-3L6,0L0,3")
+    .attr("fill", "#999");
+
+  const link = container.append("g")
+    .attr("stroke", "#999")
+    .attr("stroke-opacity", 0.6)
+  .selectAll("line")
+  .data(links)
+  .join("line")
+    .attr("stroke-width", d => Math.sqrt(d.value))
+    .attr("marker-end", "url(#arrow)");
+
+
+  const node = container.append("g")
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1.5)
+    .selectAll("circle")
+    .data(nodes)
+    .join("circle")
+      .attr("r", 10)
+      .attr("fill", "#69b3a2")
+      .call(drag(simulation));
+
+  const label = container.append("g")
+      .selectAll("text")
+      .data(nodes)
+      .join("text")
+      .text(d => d.id)
+      .attr("text-anchor", "middle")
+      .attr("dy", -15);
+
+  simulation.on("tick", () => {{
+    link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+    node.attr("cx", d => d.x).attr("cy", d => d.y);
+    label.attr("x", d => d.x).attr("y", d => d.y);
+  }});
+  function drag(simulation) {{
+    function dragstarted(event, d) {{
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }}
+    function dragged(event, d) {{
+      d.fx = event.x;
+      d.fy = event.y;
+    }}
+    function dragended(event, d) {{
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }}
+    return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
+  }}
+</script>
+</body>
+</html>
+"""
+
+    with open(filename, "w") as f:
+        f.write(html_template)
+
+    print(f"Graph exported to {filename}")
+
+
+
+"""
 SUPPORTING FUNCTIONS
 """
 
@@ -282,6 +426,7 @@ if __name__=="__main__":
     ui = list()
     macros = dict()
     macro_args = dict()
+    test_graph = dict()
     
     def draw(max_lines=20,fewer_lines=0, skipping = False):
         max_lines -= fewer_lines
@@ -346,13 +491,58 @@ if __name__=="__main__":
     restarts = True
     ui_components = dict()
     test_mode_progress = 0
+    segment_ids = dict()
+    segment_graph = dict()
+    current_segment = -1
+    segment_ids[-1] = (-1, "# start")
+    segment_graph[-1] = dict()
+    segment_seen = dict()
+    segment_seen_total = dict()
 
-    def print_test_resulst():
+    def print_test_resulst(final_testing=False):
         print("\033[2J\033[H")
-        print(f"Testing {test_mode_progress}/{test_mode}")
+        if test_mode_progress > test_mode: print(f"Tested {test_mode} times")
+        else: print(f"Testing {test_mode_progress}/{test_mode}")
+
+        for k in segment_seen:
+            segment_seen_total[k] = segment_seen_total.get(k,0)+1
+        segment_seen.clear()
+        
+        """visited = dict()
+        visited[-1] = 1.0
+        for segment in segment_graph:
+            visited[0] = 1.0
+            nexts = sum(segment_graph[segment].values())
+            #print(segment_ids[segment][1].strip()[1:].strip())
+            for followup in segment_graph[segment]:
+                rank = segment_graph[segment][followup]/float(nexts)
+                #print("  ",segment_ids[followup][1].strip()[1:].strip(), str(int(rank*100+0.5))+"%")
+                visited[followup] = visited.get(followup, 0) + rank*visited.get(segment,0)"""
+
+        """print("Importance")
+        for segment in segment_ids:
+            val = int(min(visited.get(segment, 0)*100+0.5, 100))
+            if val<100: print(segment_ids[segment][1].strip()[1:].strip().ljust(20), str(val)+"% ")
+            if final_testing and visited.get(segment, 0) == 0:
+                print(f"\n\033[031mError\033[0m Never used segment at book.st line {segment_ids[segment][0]}\n"+segment_ids[segment][1])
+                exit(0)"""
+
+        for segment in segment_ids:
+            if segment == -1: continue
+            if segment not in segment_seen_total and final_testing:
+                print(f"\n\033[031mError\033[0m Never used segment at book.st line {segment_ids[segment][0]}\n"+segment_ids[segment][1])
+            print(segment_ids[segment][1].strip()[1:].strip().ljust(20), str(int(segment_seen_total.get(segment, 0)/min(test_mode_progress, test_mode)*100+0.5))+"%")
+
+        if final_testing:
+            def name(segment):
+                return segment_ids[segment][1].strip()[1:].strip()+" (line "+str(segment)+")"
+
+            graph = {name(u): {name(v): w for v,w in n.items()} for u,n in segment_graph.items()}
+            export_graph_to_html(graph)
 
 
     while restarts:
+        current_segment = -1
         declaring_ui = False
         declaring_macro = ""
         restarts = False
@@ -378,9 +568,20 @@ if __name__=="__main__":
                         macros[declaring_macro].append((current_line-1, line))
                 elif line.startswith("#"):
                     line = line[1:].strip()
-                    if line==waiting_for:
+                    assert line, "Unnamed segment"
+                    # make sure we add all ids in segment graph
+                    new_segment_found = file_lines[current_line-1][0]
+                    if new_segment_found not in segment_ids:
+                        segment_ids[new_segment_found] = file_lines[current_line-1]
+                        segment_graph[new_segment_found] = dict()
+                    # enter segment
+                    if line==waiting_for or not waiting_for:
+                        segment_seen[new_segment_found] = segment_seen.get(new_segment_found,0) + 1
                         waiting_for = ""
                         skipping = False
+                        segment_graph[current_segment][new_segment_found] = segment_graph[current_segment].get(new_segment_found, 0) + 1
+                        current_segment = new_segment_found
+                        
                 elif waiting_for:
                     pass
                 elif line.startswith("&"):
@@ -531,6 +732,6 @@ if __name__=="__main__":
         if test_mode:
             test_mode_progress += 1
             print_test_resulst()
-            if test_mode_progress<test_mode:
-                restarts = True
+            if test_mode_progress<test_mode: restarts = True
     draw()
+if test_mode: print_test_resulst(final_testing=True)

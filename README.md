@@ -120,13 +120,13 @@ You are wrong.
 <<< start
 ```
 
-## Testing your stories
+## Testing stories
 
 Before going on, I should also mention
-the you can have automated testing that randomly wades
-through options of your story. This will catch most
-conceivable errors, such as unused story segments, pointing
-to missing, and so on. These errors would otherwise
+the you can have testing that randomly wades
+through options of your story. This is called fuzz testing in computer
+science and will find a lot of errors, such as unused story segments, 
+pointing to missing, and so on. These errors would otherwise
 appear as encountered while running stories. Testing also 
 generates for you a visual storyboard to get a visual diagram
 of what you have created. Do note that it
@@ -135,7 +135,12 @@ unlikely as more and more testing repetitions are added.
 
 Run testing with `python -m engine book.st --test 1000`, 
 where the last number is the number of times the story is
-silently repeated.
+silently repeated. **Having too few repetitions may lead to complaining about segments not being encountered.**
+
+Testing also procuces a file *graph.html* that visualizes your
+basic storyboard if you open it in your browser. 
+There, segments link to those that may follow after them.
+
 
 ## Variables
 

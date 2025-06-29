@@ -51,9 +51,7 @@
   |
   `[red]-[_value_] health[yellow]
   -[_value_] health
-  ="" _death_
-  <0 health ="death" _death_
-  >>> [_death_]
+  <1 health >>> death
 &
 
 & HUNGRY 
@@ -64,6 +62,7 @@
   @0 provisions `[red]-1 health[yellow]
   @0 provisions -1 health
   <1 health >>> death
+  >0 provisions `eat
   >0 provisions I eye my provisions carefully and pick the most tasty. Yum![end]
   >0 provisions -1 provisions
 &
@@ -153,9 +152,9 @@ a second coconut at me.
   >>> flee
 
   # wait
-  I laugh, finding the situation hilarious. I will not dodge! 
-  I will stand there and take the hit - to make a statement! Of what
-  I know not.
+  I laugh, finding the situation hilarious. I will not dodge! I will 
+  stand there and take the hit. To make a statement! About what, I 
+  know not.
   |
   >>> hit
 
@@ -371,8 +370,8 @@ learning process. In a more serious note, I grow weary.
   > [_chance_] intellect What is this huge specimen of mansonry doing here? I am
   > [_chance_] intellect saying "mansonry" because this is the only conceivable explanation
   > [_chance_] intellect of why the rock is composed of several smoother segments.[end]
-  @"curious" trait My curiocity is piqued. I think it is supposed to kill cats or something,
-  @"curious" trait so not applicable to me - whatever I am.
+  @"curious" trait My curiocity is piqued. I think it is supposed to kill cats or
+  @"curious" trait something, but whatever I am no cat. Perhaps.
   |
   @"curious" trait >>> death
   >>> death

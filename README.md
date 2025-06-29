@@ -216,7 +216,6 @@ error while running, but this is not the case for this prototype.
 Do check your stories.**
 
 
-
 ## Hud
 
 You can also crate an interface at the top of your screen by
@@ -258,4 +257,38 @@ segments, like below.
 
 # start
 This is my adventure.
+```
+
+## Macros
+
+You may want to perform some tasks repeatedly in your stories.
+In that case, one option to declare macros that expand into
+complicated segments is provided. In the simplest case, 
+macros are declared similar
+to Hud elements, though they substitute the `%` symbol with `&`.
+But you also need to call them, which is done with the syntax
+`\\ NAME`. Below is an example, where by convention we set
+macro names with capital letters to make them easy to spot:
+
+```mdx
+& HELLO
+  This sentence is printed twice.
+&
+\\ HELLO
+\\ HELLO
+```
+
+You can parameterize how macros are applied each time by allowing
+them to change some parts of their text based on something
+provided during their call. This is done by adding variable
+names separated by space after the macro name in their definition.
+Then use comma-separated values or expressions when applying the 
+macros. An example is given below.
+
+```mdx
+& PRINT text
+  text
+&
+\\ PRINT First text.
+\\ PRINT Second text.
 ```

@@ -231,6 +231,8 @@ def process_line(line):
 lines = list()
 printed = dict()
 ui = list()
+macros = dict()
+macro_args = dict()
 def draw(max_lines=20,fewer_lines=0, skipping = False):
     max_lines -= fewer_lines
     print(clear_screen)
@@ -296,22 +298,44 @@ restarts = True
 ui_components = dict()
 while restarts:
     declaring_ui = False
+    declaring_macro = ""
     restarts = False
     skipping = False
+    file_lines = list()
     with open("book.st") as file:
-        for line in file:
+        for i, line in enumerate(file):
+            file_lines.append((i,line))
+    try:
+        current_line = 0
+        while current_line < len(file_lines):
+            line = file_lines[current_line][1]
+            current_line = current_line + 1
             if line[-1]=="\n":
                 line = line[:-1]
             line = line.strip()
             if not line:
                 continue
-            if line.startswith("#"):
+            if declaring_macro:
+                if line.startswith("&"):
+                    declaring_macro = ""
+                else:
+                    macros[declaring_macro].append((current_line-1, line))
+            elif line.startswith("#"):
                 line = line[1:].strip()
                 if line==waiting_for:
                     waiting_for = ""
                     skipping = False
             elif waiting_for:
                 pass
+            elif line.startswith("&"):
+                declaring_macro = process_line(line[1:].strip())
+                assert declaring_macro is not None
+                declaring_macro = declaring_macro.split()
+                assert declaring_macro
+                assert declaring_macro[0]
+                macros[declaring_macro[0]] = list()
+                macro_args[declaring_macro[0]] = declaring_macro[1:]
+                declaring_macro = declaring_macro[0]
             elif line.startswith("%"):
                 if declaring_ui:
                     ui_component = ui_components[ui_component_name].append(len(ui)) # get current name
@@ -336,6 +360,23 @@ while restarts:
                     c = readchar()
                     if c==KEY_SPACE or c==KEY_ENTER:
                         break
+            elif line.startswith("\\\\"):
+                macro_to_apply = process_line(line[2:].strip())
+                assert macro_to_apply
+                pos = macro_to_apply.find(' ') 
+                if pos == -1:
+                    macro_to_apply = [macro_to_apply]
+                else:
+                    macro_to_apply = [macro_to_apply[:pos]]+macro_to_apply[pos:].split(",")
+                to_inject = macros[macro_to_apply[0]]
+                assert len(macro_args[macro_to_apply[0]]) == len(macro_to_apply)-1
+                for arg,value in zip(macro_args[macro_to_apply[0]], macro_to_apply[1:]):
+                    to_inject = [(i,text.replace("["+arg+"]", value)) for i,text in to_inject]
+                file_lines = to_inject + file_lines[current_line:]
+                current_line = 0
+                # we do this trick here to also clean up memory while applying macros,
+                # memory would grow based on macro usage anyway, but also we don't do
+                # the clean up continuously to stress the program
             elif line.startswith("<<<"):
                 waiting_for = line[3:].strip()
                 waiting_for = process_line(waiting_for)
@@ -377,7 +418,8 @@ while restarts:
             elif line.startswith(">>>"):
                 waiting_for = line[3:].strip()
                 waiting_for = process_line(waiting_for)
-                assert waiting_for
+                if not waiting_for:
+                    continue
                 options = waiting_for.split(",")
                 selection = random.randint(0,len(options)-1)
                 while len(options)!=1:
@@ -419,4 +461,10 @@ while restarts:
                         for line in line.split("\n"):
                             lines.append(line)
                             skipping = draw(skipping=skipping)
+    except Exception as e:
+        print(f"Error {e} at book.st line {file_lines[current_line][0]}\n"+file_lines[current_line][1])
+        raise e
+    except AssertionError as e:
+        print(f"Error {e} at book.st line {file_lines[current_line][0]}\n"+file_lines[current_line][1])
+        raise e
 draw()

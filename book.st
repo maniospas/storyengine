@@ -15,7 +15,7 @@
 % HEALTH
   =[max_health] _lost_
   -[health] _lost_
-  !0 _lost_ [white][noend]
+  !0 _lost_ [reset][noend]
   !0 _lost_ ▌[red][noend]
   !0 _lost_ > 3 health < 8 health ^ health 🧡[noend]
   !0 _lost_ > 7 health ^ health 💚[noend]
@@ -186,7 +186,7 @@ Is it... screeching mockingly? Does it perchance have sentience?
 >>> chase,think,look,eat
 
   # chase
-  Enraged I follow the monkey into a jungle. It has the home advantage, 
+  Enraged, I follow the monkey into a jungle. It has the home advantage, 
   but I embrace my anger, feeling myself going [cyan]berserk[reset]. How dare 
   the simian play with me that way?
   |
@@ -261,7 +261,7 @@ Is it... screeching mockingly? Does it perchance have sentience?
   >[_chance_] sight Surely it leeds to some city. I squint, and sure enough spot chimney
   >[_chance_] sight smoke in the distance. Having such keen sight feels good, and I 
   >[_chance_] sight push my glases u-. Sorry, there's no such item on me. I just touch 
-  >[_chance_] sight top of my nose. A habit it seems.
+  >[_chance_] sight the top of my nose. A habit it seems.
   <[_chance_] sight [end]I weigh my options but don't have much to ponder on. 
   |
   = "trail" _trail_

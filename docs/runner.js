@@ -1,175 +1,392 @@
-document.getElementById('run-btn').addEventListener('click', () => {
-  /* ───────── 1.  PARSE SOURCE ───────── */
-  const lines = document.getElementById('editor').innerText.split('\n');
-  const segs  = Object.create(null);   // # segment → []
-  const macros= Object.create(null);   // & name   → {params, body}
-  let mode = null;                     // 'seg' | 'mac'
-  let cur  = '';                       // segment / macro name
-  let macBody = [], macParams = [];
+function processValue(value, vars) {
+    if (value.startsWith("[")) {
+        if(!(value in vars)) throw new Error("Variable not found: " + value.slice(1, -1));
+        value = vars[value];
+    }
+    const num = parseInt(value, 10);
+    if (!isNaN(num)) return num;
+    if (!(value.startsWith("\"") && value.endsWith("\"") && value.length >= 2)) throw new Error("Value should be either a number or a string enclosed in \" but is neither: " + value);
+    return value.slice(1, -1);
+}
 
-  for (let raw of lines) {
-    const L = raw.trimEnd();
-    if (L.startsWith('&') && L.trim() !== '&') {
-      mode='mac';
-      const [, ...rest] = L.slice(1).trim().split(/\s+/);
-      cur       = rest[0];
-      macParams = rest.slice(1);
-      macBody   = [];
-    } else if (L === '&' && mode==='mac') {
-      macros[cur] = {params: macParams, body: macBody.slice()};
-      mode = null;
-    } else if (L.startsWith('#')) { 
-      mode='seg'; cur = L.slice(1).trim(); segs[cur]=[];
-    } else if (mode==='mac') macBody.push(L);
-    else if (mode==='seg')  segs[cur].push(L);
+function processVariableName(expr, vars) {
+    const prev = expr;
+    if (expr.startsWith("[")) {
+        expr = processValue(expr, vars);
+        if (typeof expr !== "string") throw new Error("Can only obtain names from string values: " + prev);
+    }
+    return `[${expr}]`;
+}
+
+function processVariableValue(expr, vars) {
+    expr = processVariableName(expr, vars);
+    if (!(expr in vars)) throw new Error("This was previously not set: " + expr);
+    return vars[expr];
+}
+
+function processCondition(line, vars) {
+    if (line.startsWith("!")) {
+        const args = line.slice(1).trim().split(" ");
+        if (args.length <= 2) throw new Error("Condition `! value var` must be followed by the rest of a line");
+        const arg0 = processValue(args[0], vars);
+        const arg1 = processVariableValue(args[1], vars);
+        if ((typeof arg0 === "number") !== (typeof arg1 === "number"))  throw new Error("`! value var` can only compare both numbers or both strings\nCurrent inputs: " + arg0 + ", " + arg1);
+        if (arg0 === arg1) return;
+        return processCondition(args.slice(2).join(" "), vars);
+    }
+    if (line.startsWith("@")) {
+        const args = line.slice(1).trim().split(" ");
+        if (args.length <= 2) throw new Error("Condition `@ value var` must be followed by the rest of a line");
+        const arg0 = processValue(args[0], vars);
+        const arg1 = processVariableValue(args[1], vars);
+        if ((typeof arg0 === "number") !== (typeof arg1 === "number")) throw new Error("`@ value var` can only compare both numbers or both strings\nCurrent inputs: " + arg0 + ", " + arg1);
+        if (arg0 !== arg1) return;
+        return processCondition(args.slice(2).join(" "), vars);
+    }
+    if (line.startsWith(">") && !line.startsWith(">>>")) {
+        const args = line.slice(1).trim().split(" ");
+        if (args.length <= 2) throw new Error("Condition `> value var` must be followed by the rest of a line: " + args);
+        const arg0 = processValue(args[0], vars);
+        const arg1 = processVariableValue(args[1], vars);
+        if (typeof arg0 !== "number" || typeof arg1 !== "number") throw new Error("`> value var` can only compare numbers\nCurrent inputs: " + arg0 + ", " + arg1);
+        if (arg0 >= arg1) return;
+        return processCondition(args.slice(2).join(" "), vars);
+    }
+    if (line.startsWith("<") && !line.startsWith("<<<")) {
+        const args = line.slice(1).trim().split(" ");
+        if (args.length <= 2) throw new Error("Condition `< value var` must be followed by the rest of a line: " + args);
+        const arg0 = processValue(args[0], vars);
+        const arg1 = processVariableValue(args[1], vars);
+        if (typeof arg0 !== "number" || typeof arg1 !== "number") throw new Error("`< value var` can only compare numbers\nCurrent inputs: " + arg0 + ", " + arg1);
+        if (arg0 <= arg1) return;
+        return processCondition(args.slice(2).join(" "), vars);
+    }
+    return line;
+}
+
+function processLine(line, vars) {
+    line = processCondition(line, vars);
+    if (!line) return line;
+    if (line.startsWith("=")) {
+        const parts = line.slice(1).trim().split(/\s+/);
+        if (parts.length !== 2) throw new Error("Wrong syntax: expected `=value varname`");
+        vars[processVariableName(parts[1], vars)] = processValue(parts[0], vars);
+        return;
+    }
+    if (line.startsWith("?")) {
+        const parts = line.slice(1).trim().split(/\s+/);
+        if (parts.length !== 2) throw new Error("Wrong syntax: expected `?value varname`");
+        const value = processValue(parts[0], vars);
+        if (typeof value !== "number") throw new Error("?value can only be applied on number values");
+        const rand = value >= 0
+            ? Math.floor(Math.random() * (value + 1))
+            : -Math.floor(Math.random() * (-value + 1));
+        vars[processVariableName(parts[1], vars)] = rand;
+        return;
+    }
+    const arithmeticOps = {
+        "+": (a, b) => a + b,
+        "-": (a, b) => a - b,
+        "*": (a, b) => a * b,
+        "/": (a, b) => a / b
+    };
+    for (const op of Object.keys(arithmeticOps)) {
+        if (line.startsWith(op)) {
+            const parts = line.slice(1).trim().split(/\s+/);
+            if (parts.length !== 2)  throw new Error(`Wrong syntax: expected \`${op}value varname\``);
+            const value = processValue(parts[0], vars);
+            const varName = processVariableName(parts[1], vars);
+            if (typeof value !== "number") throw new Error(`${op}value can only be applied on number values`);
+            if (!(varName in vars)) throw new Error("This was previously not set: " + varName);
+            if (typeof vars[varName] !== "number") throw new Error(`${op}value can only be applied on number variables`);
+            vars[varName] = arithmeticOps[op](vars[varName], value);
+            return;
+        }
+    }
+    if (line.startsWith("^")) {
+        let args = line.slice(1).trim().split(" ", 3);
+        args = args.map(arg => vars["[" + arg.trim() + "]"] ?? arg.trim());
+        if (typeof args[1] !== "string") throw new Error("^ expects a string as second argument");
+        line = args[1].repeat(parseInt(args[0], 10));
+    }
+    for (const [varName, value] of Object.entries(vars)) line = line.replaceAll(varName, String(value));
+    return line;
+}
+
+function escapeHtml(str) {
+    return str;
+}
+
+
+document.getElementById('run-btn').addEventListener('click', async () => {
+const out  = document.getElementById('output');
+const hud  = document.getElementById('hud');
+let current_line = 0;
+let file_lines = escapeHtml(document.getElementById('editor').innerText).split('\n');
+
+try{
+  out.innerHTML = "";
+  const ui = [];
+  let vars = {
+    "[reset]" : "</span><span>",
+    "[red]": "</span><span style='color:#AE1423;'>", 
+    "[green]": "</span><span style='color:#1B6339;'>", 
+    "[yellow]": "</span><span style='color:#C79A29;'>", 
+    "[purple]": "</span><span style='color:#7B3FC6;'>",  
+    "[cyan]": "</span><span style='color:#247D8F;'>",    
+    "[blue]": "</span><span style='color:#0061FE;'>",     
+    "[white]": "</span><span style='color:#dddddd;'>",  
+    "[__refresh]": "20",
+    "[end]": "<br>",
   }
 
-  /* ───────── 2.  RUNTIME STATE ───────── */
-  const out  = document.getElementById('output');
-  const hud  = document.getElementById('hud');
-  const vars = Object.create(null);
-  const hudMap = Object.create(null);
-  const COLORS = {black:'#000',red:'red',green:'green',yellow:'goldenrod',
-                  blue:'blue',purple:'purple',cyan:'cyan',white:'#fff'};
+  async function drawUi() {
+      let uiLines = 0;
+      let accum = "";
+      hud.innerHTML = "";
 
-  const fmt = t => t.replace(/\[([a-zA-Z0-9_.]+)\]/g,(_,k)=>
-      COLORS[k] ? `<span style="color:${COLORS[k]}">`
-     : k==='reset'?'</span>'
-     : k==='end'  ?'\n'
-     : vars[k]!==undefined ? String(vars[k]) : `[${k}]`);
+      for (const rawLine of ui) {
+          if (rawLine == null) continue;
+          const line = processLine(rawLine, vars);
+          if (line == null) continue;
+          if (line.endsWith("[noend]")) {
+              accum += line;
+              continue;
+          }
+          const fullLine = (accum + line).replace(/\[noend\]/g, "");
+          const lineEl = document.createElement("div");
+          lineEl.innerHTML = fullLine;
+          hud.appendChild(lineEl);
+          uiLines++;
+          accum = "";
+      }
+      hud.hidden = uiLines === 0;
+  }
 
-  /* quick typewriter w/ skip */
-  const type = html => new Promise(res=>{
-    const d=document.createElement('div'); out.appendChild(d);
-    let i=0,skip=false;
-    const press=()=>skip=true;
-    const done =()=>{d.innerHTML=html;off();res();};
-    const off  =()=>{document.removeEventListener('keydown',press);
-                     document.removeEventListener('mousedown',press);};
-    document.addEventListener('keydown',press);
-    document.addEventListener('mousedown',press);
-    (function tick(){ if(skip){done();return;}
-      d.innerHTML=html.slice(0,++i);
-      if(i<html.length) setTimeout(tick,20); else done();
-    })();
-  });
 
-  const sub = v => (v.startsWith('[')&&v.endsWith(']')) ? vars[v.slice(1,-1)] : v;
-
-  /* ───────── 3.  MAIN ENGINE ───────── */
-  const run = async (seg, clearOut = false) => {
-    if (clearOut) out.innerHTML='';
-    purgeChoices();                                 // remove old buttons
-
-    let i=0, list=segs[seg]||[], concat='', collectingHUD=false, hudName='';
-    let softJump='';
-
-    const flush = async ()=>{ if(!concat) return; await type(concat); concat=''; };
-
-    const updateHUD = () =>{
-      hud.innerHTML='';
-      Object.values(hudMap).forEach(arr=>{
-        arr.forEach(l=>hud.insertAdjacentHTML('beforeend', fmt(l.replace('[noend]',''))+'\n'));
-      });
-      hud.style.display = hud.textContent.trim() ? '' : 'none';
-    };
-
-    const applyMacro = async (name,args)=>{
-      const m=macros[name]; if(!m) return;
-      const rep = ln=>{ m.params.forEach((p,j)=> ln=ln.replaceAll(`[${p}]`,args[j]||''));return ln;};
-      for (const ln of m.body) await exec(rep(ln));
-    };
-
-    async function exec(raw){
-      let line=raw.trim();
-      if(!line){ concat+='\n'; return; }
-
-      /* HUD MODE ------------------------------------------------------------ */
-      if(line.startsWith('%')){
-        if(!collectingHUD){             // opening
-          collectingHUD=true; hudName=line.slice(1).trim()||'__DEFAULT__';
-          hudMap[hudName]=[];
-        } else {                        // closing %
-          collectingHUD=false; updateHUD();
+  async function printWithSkip(text, delay) {
+    return new Promise(resolve => {
+        let i = 0;
+        let buffer = ""; // holds the current output
+        const container = document.createElement("span"); // container for typed content
+        out.appendChild(container);
+        function printNextChar() {
+            if (i >= text.length) {
+                container.innerHTML += "<br>";
+                resolve(false);
+                return;
+            }
+            if (text[i] === "<") {
+                let tag = "";
+                while (i < text.length && text[i] !== ">") {tag += text[i++];}
+                if (i < text.length) tag += text[i++]; // include '>'
+                buffer += tag;
+                container.innerHTML = buffer;
+                printNextChar();
+            } else {
+                buffer += text[i++];
+                container.innerHTML = buffer;
+                setTimeout(printNextChar, delay);
+            }
         }
-        return;
-      }
-      if(collectingHUD){ hudMap[hudName].push(line); return; }
 
-      /* MACROS -------------------------------------------------------------- */
-      if(line.startsWith('\\\\')){
-        const rest=line.slice(2).trim(); const sp=rest.indexOf(' ');
-        const mName = sp===-1?rest:rest.slice(0,sp);
-        const argStr= sp===-1?'':rest.slice(sp+1);
-        await applyMacro(mName,argStr?argStr.split(',').map(s=>s.trim()):[]);
-        return;
-      }
+        printNextChar();
+    });
+}
 
-      /* WAIT PROMPT --------------------------------------------------------- */
-      if(line.startsWith('`')){
-        await flush();
-        const lbl = fmt(line.slice(1).trim()).replace(/<\/?span[^>]*>/g,'');
-        await new Promise(r=>{
-          const b=document.createElement('button'); b.textContent=lbl;
-          b.onclick=()=>{b.remove();r();}; out.appendChild(b);
-        });
-        return;
-      }
 
-      /* MENUS --------------------------------------------------------------- */
-      if(line.startsWith('>>>')||line.startsWith('<<<')){
-        const hard = line[2]==='>';
-        const opts = fmt(line.slice(3)).split(',').map(s=>s.trim()).filter(Boolean);
-        await flush();
-        const choice = await new Promise(r=>{
-          opts.forEach(o=>{
-            const b=document.createElement('button'); b.className='choice';
-            b.textContent=o; b.onclick=()=>{purgeChoices();r(o);};
-            out.appendChild(b);
+
+  async function appendToOutput(lines, vars, skipping=false) {
+      await drawUi();
+      let accum = "";
+      for (let i = 0; i < lines.length; i++) {
+          let line = lines[i];
+          if (line == null) continue;
+          if (line.endsWith("[noend]")) {
+              accum += line;
+              continue;
+          }
+          let fullText = accum + line;
+          let printer = !fullText.startsWith("|") || fullText === "|";
+          let outputLine = fullText;
+          if(fullText.startsWith("|")) outputLine = fullText.slice(1);
+          else if(skipping) printer = false;
+          fullText = "<span>"+fullText.replace(/\[noend\]/g, "")+"</span>";
+          if (printer) {
+              const delay = parseFloat(vars["[__refresh]"]) || 30;
+              skipping = await printWithSkip(outputLine, delay);
+          } 
+          else out.textContent += outputLine + "\n";
+          accum = "";
+      }
+      out.scrollTop = out.scrollHeight;
+      return skipping;
+  }
+  async function waitForUserSelection(options) {
+      await drawUi();
+      if (options.length === 1) return options[0];
+      const outEl = document.getElementById("output");
+      const savedNodes = Array.from(outEl.childNodes).map(node => node.cloneNode(true));
+      return new Promise(resolve => {
+          const optionsContainer = document.createElement("div");
+          optionsContainer.className = "inline-options";
+          options.forEach(opt => {
+              const button = document.createElement("button");
+              const tempSpan = document.createElement("span");
+              tempSpan.innerHTML = opt; 
+              button.innerHTML = tempSpan.innerHTML;
+              button.onclick = () => {
+                  outEl.innerHTML = "";
+                  savedNodes.forEach(node => outEl.appendChild(node));
+                  // const echoSpan = document.createElement("span");
+                  // echoSpan.innerHTML = `> ${opt}`;
+                  // outEl.appendChild(echoSpan);
+                  // outEl.appendChild(document.createElement("br"));
+                  resolve(opt);
+              };
+
+              optionsContainer.appendChild(button);
           });
-        });
-        if(hard) { await run(choice,false); return; }  // keep history
-        softJump = choice; return;
+          outEl.appendChild(optionsContainer);
+          out.scrollTop = out.scrollHeight;
+      });
+  }
+
+
+  async function waitForContinueButton(label = "Continue") {
+      await drawUi();
+      const outEl = document.getElementById("output");
+      const savedNodes = Array.from(outEl.childNodes).map(node => node.cloneNode(true));
+      return new Promise(resolve => {
+          const container = document.createElement("div");
+          container.className = "inline-options";
+          const button = document.createElement("button");
+          const tempSpan = document.createElement("span");
+          tempSpan.innerHTML = label;
+          button.innerHTML = tempSpan.innerHTML; // preserve any HTML formatting
+          button.onclick = () => {
+              outEl.innerHTML = "";
+              savedNodes.forEach(node => outEl.appendChild(node));
+              resolve();
+          };
+          container.appendChild(button);
+          outEl.appendChild(container);
+          out.scrollTop = out.scrollHeight;
+      });
+  }
+
+
+
+
+
+  let restarts = true;
+  let waiting_for = "";
+  let declaring_macro = "", macros = {}, macro_args = {};
+  let declaring_ui = false, ui_component_name = "", ui_components = {};
+  let skipping = false;
+
+  while(restarts) {
+      restarts = false;
+      current_line = 0;
+      while(current_line < file_lines.length) {
+          let line = file_lines[current_line].trimEnd().trim();
+          current_line++;
+          if(!line) continue;
+          if(declaring_macro) {
+              if(line.startsWith("&")) declaring_macro = "";
+              else macros[declaring_macro].push(line);
+          } 
+          else if(line.startsWith("#")) {
+              line = line.slice(1).trim();
+              if(!line) throw new Error("Unnamed segment");
+              if(line) line = processLine(line.trim(), vars);
+              if (line === waiting_for || !waiting_for) {
+                  waiting_for = "";
+                  skipping = false;
+              }
+          } 
+          else if(waiting_for) continue;
+          else if(line.startsWith("&")) {
+              declaring_macro = processLine(line.slice(1).trim(), vars);
+              if(!declaring_macro) throw new Error("Invalid macro declaration");
+              declaring_macro = declaring_macro.split(" ");
+              macros[declaring_macro[0]] = [];
+              macro_args[declaring_macro[0]] = declaring_macro.slice(1);
+              declaring_macro = declaring_macro[0];
+          } 
+          else if(line.startsWith("%")) {
+              const uiName = processLine(line.slice(1).trim(), vars);
+              if (declaring_ui && uiName) throw new Error("Unexpected UI name inside UI block");
+              if (!declaring_ui) {
+                  if (ui_components[uiName]) {
+                      const [start, end = ui.length] = ui_components[uiName];
+                      for (let i = start; i < end; i++) ui[i] = null;
+                  }
+                  ui_components[uiName] = [ui.length];
+              }
+              ui_component_name = uiName;
+              declaring_ui = !declaring_ui;
+          } 
+          else if(declaring_ui) ui.push(line);
+          else {
+              const cond = processCondition(line, vars);
+              if (cond == null) continue;
+              line = cond;
+              if(line.startsWith("`")) {
+                  let msg = processLine(line.slice(1).trim(), vars);
+                  if (!msg) continue;
+                  await waitForContinueButton(`${msg}`);
+              } 
+              else if(line.startsWith("\\\\")) {
+                  let macroLine = processLine(line.slice(2).trim(), vars);
+                  if (!macroLine) throw new Error("Empty macro invocation");
+                  const spaceIdx = macroLine.indexOf(" ");
+                  let macroName, macroParams;
+                  if (spaceIdx === -1) {
+                      macroName = macroLine;
+                      macroParams = [];
+                  } 
+                  else {
+                      macroName = macroLine.slice(0, spaceIdx);
+                      macroParams = macroLine.slice(spaceIdx + 1).split(",");
+                  }
+                  let injected = macros[macroName];
+                  if (macroParams.length !== macro_args[macroName].length) throw new Error("Macro arguments mismatch");
+                  for (let [arg, val] of macro_args[macroName].map((a, i) => [a, macroParams[i]])) injected = injected.map(text => text.replaceAll(`[${arg}]`, val));
+                  file_lines = [...injected, ...file_lines.slice(current_line)];
+                  if(!file_lines) throw Error("Failed to inject macro");
+                  current_line = 0;
+              } 
+              else if(line.startsWith("<<<") || line.startsWith(">>>")) {
+                  const restartMode = line.startsWith("<<<");
+                  waiting_for = processLine(line.slice(3).trim(), vars);
+                  waiting_for_origin = file_lines[current_line];
+                  if (!waiting_for) {
+                      out.innerHTML = "";
+                      continue;
+                  }
+                  const options = waiting_for.split(",");
+                  waiting_for = await waitForUserSelection(options);
+                  if(!waiting_for) throw new Error("Failed to select");
+                  if (restartMode) {
+                      restarts = true;
+                      out.innerHTML = "";
+                      break;
+                  }
+              } 
+              else {
+                  const processed = processLine(line, vars);
+                  if (processed != null) for (const subline of processed.split("\n")) {
+                      await appendToOutput([subline], vars, skipping=false);
+                  }
+              }
+          }
       }
+  }
 
-      /* CONDITIONS ---------------------------------------------------------- */
-      if(/^[@!<>]/.test(line)){
-        const tk=line.split(/\s+/);
-        while(/^[@!<>]/.test(tk[0])){
-          const op=tk.shift(), A=sub(tk.shift()), B=sub(tk.shift());
-          if( (op==='@'&&A!=B)||(op==='!'&&A==B)||(op==='<'&&+A>=+B)||(op==='>'&&+A<=+B) ) return;
-        }
-        line=tk.join(' '); if(!line) return;
-      }
 
-      /* VARIABLE OPS -------------------------------------------------------- */
-      if(line.startsWith('=')){const[v,k]=line.slice(1).trim().split(/\s+/);
-        vars[k]=isNaN(+v)?v.replace(/^"|"$/g,''):+v; return;}
-      if(line.startsWith('?')){const[m,k]=line.slice(1).trim().split(/\s+/);
-        vars[k]=Math.floor(Math.random()*(+sub(m)+1)); return;}
-      const math=(f)=>{const[v,k]=line.slice(1).trim().split(/\s+/);
-        vars[k]=f(vars[k]??0,+sub(v));};
-      if(line.startsWith('+')){math((a,b)=>a+b); return;}
-      if(line.startsWith('-')){math((a,b)=>a-b); return;}
-      if(line.startsWith('*')){math((a,b)=>a*b); return;}
-      if(line.startsWith('/')){math((a,b)=>Math.floor(a/(b||1))); return;}
-
-      /* REPEAT ^ ------------------------------------------------------------ */
-      if(line.startsWith('^')){
-        const [cnt,...txt]=line.slice(1).trim().split(/\s+/);
-        concat+=fmt(txt.join(' ').repeat(+sub(cnt)||0)); return;
-      }
-
-      /* STANDARD TEXT ------------------------------------------------------- */
-      const cont=line.endsWith('[noend]');
-      concat+=fmt(line.replace('[noend]',''))+(cont?'':'\n');
-      if(!cont) await flush();
-    }
-
-    while(i<list.length){ await exec(list[i++]); if(softJump){await run(softJump,true); return;} }
-  };
-
-  const purgeChoices = ()=> out.querySelectorAll('button.choice').forEach(b=>b.remove());
-
-  run('start',true);           // first segment, clear screen
-});
+}catch(error){
+out.innerHTML = "<b>"+error+"</b><br><br>At line "+(current_line-1)+":<br>"+file_lines[current_line-1];
+hud.innerHTML = "";
+document.getElementById("options").innerHTML = "";
+}});

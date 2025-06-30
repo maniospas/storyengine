@@ -434,42 +434,34 @@ if __name__=="__main__":
         ui_lines = 0
         accum = ""
         for line in ui:
-            if line is None:   # invalidated lines by overwriting components
-                continue
+            if line is None: continue # invalidated lines by overwriting components
             line = process_line(line)
-            if line is None:
-                continue
+            if line is None: continue
             if line.endswith("[noend]"):
                 accum += line
                 continue
             if not test_mode: print((accum+line).replace("[noend]", "")+vars["[reset]"])
             ui_lines += 1
             accum = ""
-        assert not accum
         total_lines = 0
         for line in lines:
-            if line is None:
-                continue
-            if line.endswith("[noend]"):
-                continue
+            if line is None: continue
+            if line.endswith("[noend]"): continue
             total_lines += 1
         for _ in range(max_lines-total_lines-ui_lines):
             if not test_mode: print()
         count_lines = 0
         accum = ""
         for line in lines:
-            if line is None:
-                continue
+            if line is None: continue
             if line.endswith("[noend]"):
                 accum += line
                 continue
             if count_lines >= total_lines-max_lines+ui_lines:
                 text = (accum+line).replace("[noend]", "")+vars["[reset]"]
                 printer = not text.startswith("|") or text=="|"
-                if not printer:
-                    text = text[1:]
-                elif skipping:
-                    printer = False
+                if not printer: text = text[1:]
+                elif skipping: printer = False
                 accum = ""
                 if not printed.get(count_lines, False):
                     printed[count_lines] = True
@@ -556,11 +548,9 @@ if __name__=="__main__":
             while current_line < len(file_lines):
                 line = file_lines[current_line][1]
                 current_line = current_line + 1
-                if line[-1]=="\n":
-                    line = line[:-1]
+                if line[-1]=="\n": line = line[:-1]
                 line = line.strip()
-                if not line:
-                    continue
+                if not line: continue
                 if declaring_macro:
                     if line.startswith("&"):
                         declaring_macro = ""

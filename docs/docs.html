@@ -132,7 +132,8 @@ Maybe next time.
   The replacement can also be done in place of numbers or strings.
   To set a variable to a random number (from 0 to a maximum), use <code>?</code>. Variable names use <code>_</code> or <code>.</code> to separate words.
   You can conditionally run lines based on comparisons shown below. 
-  Comparisons can be stacked for "and" logic. For conditional choices or segments, use a temporary variable with <code class="token varname">_underscores_</code>.</p>
+  Comparisons can be stacked for "and" logic. For conditional choices or segments, you can also use 
+  a temporary variable with <code class="token varname">_underscores_</code>.</p>
 <ul>
   <li><code class="token operator">@</code> — equal</li>
   <li><code class="token operator">!</code> — not equal</li>
@@ -153,10 +154,40 @@ You got [annoyed]% annoyed.
 
 # expl
 You exploded.
+>>> the end
 
 # safe
 You're stable.
+>>> the end
+
+# the end
+THE END
 </code></pre>
+
+<p>
+A simpler equivalent version of the above is:
+</p>
+
+
+<pre><code class="language-story">
+?100 patience
+
+# intro
+?50 annoyed
+You have [patience]% patience left.
+You got [annoyed]% annoyed.
+>10 patience  >>> safe
+You exploded.
+>>> the end
+
+# safe
+You're stable.
+
+
+# the end
+THE END
+</code></pre>
+
 
 
 <h2 id="hud-and-macros">HUD &amp; Macros</h2>

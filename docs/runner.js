@@ -136,6 +136,7 @@ try{
     "[cyan]": "</span><span style='color:#247D8F;'>",    
     "[blue]": "</span><span style='color:#0061FE;'>",     
     "[white]": "</span><span style='color:#dddddd;'>",  
+    "[separator]": "<hr<",
     "[__refresh]": "20",
     "[end]": "<br>",
   }

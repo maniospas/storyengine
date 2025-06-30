@@ -35,9 +35,9 @@
   !10 social ▌🎭 [social] social
 %
 % HEADER
-[end][cyan]---------------------------------------------------------------------
+[end][cyan][separator]
 [cyan]  [progress]
-[cyan]---------------------------------------------------------------------
+[cyan][separator]
 %
 
 & GAIN _effect_

@@ -16,6 +16,6 @@ author create highly interactive stories.
 [x] Extended fuzz testing.
 [ ] Story graph.
 
-## Run in browser
+## [Run in browser](https://maniospas.github.io/storytell/)
 
-## Docs
+## [Docs](https://maniospas.github.io/storytell/docs.html)

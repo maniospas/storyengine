@@ -139,6 +139,7 @@ try{
     "[separator]": "<hr<",
     "[__refresh]": "20",
     "[end]": "<br>",
+    "[describe_controls]": "Click on options as they appear to progress."
   }
 
   async function drawUi() {

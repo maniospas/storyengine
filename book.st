@@ -70,9 +70,7 @@
 This is an interactive short story where choices matter.
 |
 [purple]Controls[reset] 
-[reset]- Any key skips text animation.
-[reset]- Left/right arrows change selection. 
-[reset]- Press space or enter to select.
+[describe_controls]
 |
 >>> start reading,close the book
 

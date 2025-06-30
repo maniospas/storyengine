@@ -277,7 +277,8 @@ vars = {
     "[reset]": "\033[0m",
     "[end]": "\n",
     "[__refresh]": 36,
-    "[separator]": "---------------------------------------------------------------------"
+    "[separator]": "---------------------------------------------------------------------",
+    "[describe_controls]": "- Any key skips text animation.\n- Left/right arrows change selection.\n- Press space or enter to select.",
 }
 clear_screen = "\033[2J\033[H" # also moves the cursor to the top-left
 clear_last = "\033[1A\033[K" # clears last line

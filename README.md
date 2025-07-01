@@ -6,7 +6,11 @@ author create highly interactive stories.
 
 **Use an toml or markdown (better in vscode, in github use mdx) highlighter for .st files.**
 
-## Planned features / but fixes
+## [Run in browser](https://maniospas.github.io/storytell/)
+
+## [Docs](https://maniospas.github.io/storytell/docs.html)
+
+## Planned features / bug fixes
 
 [x] Reader engine.<br>
 [ ] User text input.<br>
@@ -16,10 +20,6 @@ author create highly interactive stories.
 [x] Extended fuzz testing (offline).<br>
 [x] Story graph (offline).<br>
 [ ] Low-level lang implementation.
-
-## [Run in browser](https://maniospas.github.io/storytell/)
-
-## [Docs](https://maniospas.github.io/storytell/docs.html)
 
 ## License
 
